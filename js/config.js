@@ -4,4 +4,4 @@ window.APP_CONFIG = {
   pointsUrl: "data/points.geojson",
 
   // Ακτίνα εμφάνισης όταν χρησιμοποιείται το «Η θέση μου».
-  nearbyRadiusKm: 10};
+  nearbyRadiusKm: 4};
