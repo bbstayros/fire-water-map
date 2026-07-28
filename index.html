@@ -37,11 +37,28 @@
       </button>
     </div>
 
-    <section class="legend" aria-label="Υπόμνημα">
-      <h2>Υπόμνημα</h2>
-      <div><img src="icons/hydrant.svg" alt=""> Κρουνός</div>
-      <div><img src="icons/tank.svg" alt=""> Δεξαμενή</div>
-      <div><img src="icons/water-source.svg" alt=""> Σημείο υδροληψίας</div>
+    <section class="legend filter-panel" aria-label="Υπόμνημα και φίλτρα">
+      <h2>Υπόμνημα & φίλτρα</h2>
+
+      <label class="filter-row" for="filterHydrants">
+        <input id="filterHydrants" type="checkbox" checked>
+        <img src="icons/hydrant.svg" alt="">
+        <span>Κρουνοί</span>
+      </label>
+
+      <label class="filter-row" for="filterTanks">
+        <input id="filterTanks" type="checkbox" checked>
+        <img src="icons/tank.svg" alt="">
+        <span>Δεξαμενές</span>
+      </label>
+
+      <label class="filter-row" for="filterWaterSources">
+        <input id="filterWaterSources" type="checkbox" checked>
+        <img src="icons/water-source.svg" alt="">
+        <span>Σημεία υδροληψίας</span>
+      </label>
+
+      <p id="visiblePointsCount" class="visible-count">Ορατά σημεία: 0</p>
     </section>
 
     <div id="statusMessage" class="status-message" role="status" aria-live="polite"></div>

@@ -82,14 +82,31 @@
     previewBox.innerHTML = `
       <strong>Προεπισκόπηση εκκρεμούς καταχώρησης</strong><br>
       Ονομασία: ${escapeHtml(data.name)}<br>
-      Κατηγορία: ${escapeHtml(data.category)}<br>
+      Κατηγορία: ${escapeHtml(categoryLabel(data.category))}<br>
       Συντεταγμένες: ${data.latitude.toFixed(7)}, ${data.longitude.toFixed(7)}<br>
-      Κατάσταση: ${escapeHtml(data.condition)}<br>
+      Κατάσταση: ${escapeHtml(conditionLabel(data.condition))}<br>
       Κατάσταση δημοσίευσης: pending<br><br>
-      <em>Στο επόμενο βήμα θα συνδέσουμε τη φόρμα με το ασφαλές backend και
-      θα προσθέσουμε έγκριση με κωδικό.</em>
+      <em>Η πραγματική αποθήκευση και έγκριση θα προστεθούν στο επόμενο στάδιο.</em>
     `;
   });
+
+  function categoryLabel(category) {
+    const labels = {
+      hydrant: "Κρουνός",
+      tank: "Δεξαμενή",
+      water_source: "Σημείο υδροληψίας"
+    };
+    return labels[category] || category;
+  }
+
+  function conditionLabel(condition) {
+    const labels = {
+      available: "Διαθέσιμο / λειτουργικό",
+      unknown: "Άγνωστη κατάσταση",
+      unavailable: "Μη διαθέσιμο / εκτός λειτουργίας"
+    };
+    return labels[condition] || condition;
+  }
 
   function escapeHtml(value) {
     return String(value ?? "")

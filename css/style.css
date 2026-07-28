@@ -399,3 +399,38 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+
+
+.filter-panel h2 {
+  margin-bottom: 10px;
+}
+
+.filter-row {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 !important;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.filter-row input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: var(--blue);
+}
+
+.filter-row img {
+  width: 24px;
+  height: 30px;
+}
+
+.visible-count {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: bold;
+}
