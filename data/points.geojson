@@ -1,0 +1,62 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 1,
+        "name": "Δοκιμαστικός κρουνός 1",
+        "category": "hydrant",
+        "condition": "available",
+        "notes": "Δοκιμαστική καταχώρηση.",
+        "last_checked_at": "2026-07-28",
+        "publication_status": "published"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.9322,
+          37.9386
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 2,
+        "name": "Δοκιμαστική δεξαμενή",
+        "category": "tank",
+        "condition": "unknown",
+        "notes": "Απαιτείται επιτόπιος έλεγχος.",
+        "last_checked_at": null,
+        "publication_status": "published"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.926,
+          37.943
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 3,
+        "name": "Δοκιμαστικό σημείο υδροληψίας",
+        "category": "water_source",
+        "condition": "available",
+        "notes": "Δοκιμαστικό σημείο για έλεγχο της εφαρμογής.",
+        "last_checked_at": "2026-07-28",
+        "publication_status": "published"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.94,
+          37.9345
+        ]
+      }
+    }
+  ]
+}

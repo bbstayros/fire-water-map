@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#9f1d18">
+  <title>Καταχώρηση σημείου</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="admin-page">
+  <header class="app-header">
+    <div class="brand">
+      <img class="brand-logo" src="icons/logo.svg" alt="Λογότυπο Συλλόγου">
+      <div class="brand-text">
+        <h1>Καταχώρηση νέου σημείου</h1>
+        <p>Σύλλογος Εθελοντών Πυροπροστασίας Δασών Λουτρακίου - Περαχώρας</p>
+      </div>
+    </div>
+
+    <a class="admin-link" href="index.html">← Επιστροφή στον χάρτη</a>
+  </header>
+
+  <main class="admin-layout">
+    <section class="admin-panel">
+      <div class="notice">
+        Η φόρμα είναι έτοιμη ως περιβάλλον εργασίας. Η πραγματική αποθήκευση και η
+        έγκριση με κωδικό θα ενεργοποιηθούν όταν συνδέσουμε το ασφαλές backend.
+      </div>
+
+      <form id="pointForm">
+        <label for="category">Κατηγορία</label>
+        <select id="category" required>
+          <option value="hydrant">Κρουνός</option>
+          <option value="tank">Δεξαμενή</option>
+          <option value="water_source">Σημείο υδροληψίας</option>
+        </select>
+
+        <label for="name">Ονομασία</label>
+        <input id="name" type="text" maxlength="120" required
+               placeholder="π.χ. Κρουνός Περαχώρας 01">
+
+        <div class="form-grid">
+          <div>
+            <label for="latitude">Γεωγραφικό πλάτος</label>
+            <input id="latitude" type="number" step="any" required>
+          </div>
+          <div>
+            <label for="longitude">Γεωγραφικό μήκος</label>
+            <input id="longitude" type="number" step="any" required>
+          </div>
+        </div>
+
+        <button id="adminGpsButton" class="form-button secondary" type="button">
+          📍 Χρήση GPS συσκευής
+        </button>
+
+        <p class="helper-text">
+          Μπορείς επίσης να πατήσεις πάνω στον χάρτη για να ορίσεις ή να διορθώσεις τη θέση.
+        </p>
+
+        <label for="condition">Κατάσταση</label>
+        <select id="condition" required>
+          <option value="available">Διαθέσιμο / λειτουργικό</option>
+          <option value="unknown">Άγνωστη κατάσταση</option>
+          <option value="unavailable">Μη διαθέσιμο / εκτός λειτουργίας</option>
+        </select>
+
+        <label for="notes">Παρατηρήσεις</label>
+        <textarea id="notes" rows="4" maxlength="600"
+                  placeholder="Πρόσβαση, παροχή, σύνδεσμος, ιδιαίτερες πληροφορίες..."></textarea>
+
+        <label for="lastChecked">Ημερομηνία τελευταίου ελέγχου</label>
+        <input id="lastChecked" type="date">
+
+        <button class="form-button primary" type="submit">
+          Προεπισκόπηση καταχώρησης
+        </button>
+      </form>
+
+      <div id="previewBox" class="preview-box" hidden></div>
+    </section>
+
+    <section class="admin-map-section">
+      <div id="adminMap" aria-label="Χάρτης επιλογής θέσης"></div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

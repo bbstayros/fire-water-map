@@ -1,388 +1,56 @@
 <!DOCTYPE html>
 <html lang="el">
 <head>
-    <meta charset="UTF-8">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#9f1d18">
+  <title>Χάρτης Σημείων Υδροληψίας</title>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Χάρτης Σημείων Υδροληψίας</title>
-
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    >
-
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        html,
-        body {
-            height: 100%;
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-
-        body {
-            display: flex;
-            flex-direction: column;
-            background: #f4f6f8;
-        }
-
-        header {
-            padding: 12px 16px;
-            color: white;
-            background: #b3261e;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-            z-index: 1000;
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 20px;
-        }
-
-        header p {
-            margin: 4px 0 0;
-            font-size: 13px;
-            opacity: 0.9;
-        }
-
-        #map {
-            flex: 1;
-            width: 100%;
-            min-height: 400px;
-        }
-
-        .location-button {
-            position: absolute;
-            right: 15px;
-            bottom: 25px;
-            z-index: 1000;
-
-            border: none;
-            border-radius: 10px;
-            padding: 12px 16px;
-
-            color: white;
-            background: #1565c0;
-
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
-        }
-
-        .location-button:hover {
-            background: #0d47a1;
-        }
-
-        .popup-content {
-            min-width: 210px;
-        }
-
-        .popup-content h3 {
-            margin: 0 0 8px;
-            color: #b3261e;
-        }
-
-        .popup-content p {
-            margin: 5px 0;
-        }
-
-        .navigation-link {
-            display: block;
-            margin-top: 12px;
-            padding: 9px 12px;
-
-            border-radius: 7px;
-            color: white !important;
-            background: #1565c0;
-
-            text-align: center;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .navigation-link:hover {
-            background: #0d47a1;
-        }
-
-        .status-message {
-            position: absolute;
-            top: 85px;
-            left: 50%;
-            z-index: 1000;
-
-            display: none;
-            transform: translateX(-50%);
-
-            max-width: calc(100% - 30px);
-            padding: 10px 15px;
-
-            border-radius: 8px;
-            color: white;
-            background: rgba(0, 0, 0, 0.8);
-
-            text-align: center;
-            font-size: 14px;
-        }
-
-        @media (max-width: 600px) {
-            header h1 {
-                font-size: 17px;
-            }
-
-            header p {
-                font-size: 12px;
-            }
-
-            .location-button {
-                right: 10px;
-                bottom: 18px;
-                padding: 11px 14px;
-            }
-        }
-    </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
-
 <body>
+  <header class="app-header">
+    <div class="brand">
+      <img class="brand-logo" src="icons/logo.svg" alt="Λογότυπο Συλλόγου">
+      <div class="brand-text">
+        <h1>Σύλλογος Εθελοντών Πυροπροστασίας Δασών Λουτρακίου - Περαχώρας</h1>
+        <p>Χάρτης δεξαμενών, πυροσβεστικών κρουνών και σημείων υδροληψίας</p>
+      </div>
+    </div>
 
-    <header>
-        <h1>🚒 Χάρτης Σημείων Υδροληψίας</h1>
-        <p>Κρουνοί, δεξαμενές και σημεία ανεφοδιασμού</p>
-    </header>
+    <a class="admin-link" href="admin.html" aria-label="Μετάβαση στη διαχείριση">
+      ⚙️ Διαχείριση
+    </a>
+  </header>
 
-    <div id="map"></div>
+  <main class="map-shell">
+    <div id="map" aria-label="Διαδραστικός χάρτης σημείων υδροληψίας"></div>
 
-    <button
-        id="locationButton"
-        class="location-button"
-        type="button"
-    >
+    <div class="map-toolbar" aria-label="Εργαλεία χάρτη">
+      <button id="locationButton" class="tool-button primary" type="button">
         📍 Η θέση μου
-    </button>
+      </button>
 
-    <div
-        id="statusMessage"
-        class="status-message"
-    ></div>
+      <button id="fitPointsButton" class="tool-button" type="button">
+        🗺️ Όλα τα σημεία
+      </button>
+    </div>
 
-    <script
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    ></script>
+    <section class="legend" aria-label="Υπόμνημα">
+      <h2>Υπόμνημα</h2>
+      <div><img src="icons/hydrant.svg" alt=""> Κρουνός</div>
+      <div><img src="icons/tank.svg" alt=""> Δεξαμενή</div>
+      <div><img src="icons/water-source.svg" alt=""> Σημείο υδροληψίας</div>
+    </section>
 
-    <script>
-        const map = L.map("map").setView(
-            [37.9386, 22.9322],
-            13
-        );
+    <div id="statusMessage" class="status-message" role="status" aria-live="polite"></div>
+  </main>
 
-        L.tileLayer(
-            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            {
-                maxZoom: 19,
-                attribution:
-                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            }
-        ).addTo(map);
-
-        const waterPoints = [
-            {
-                id: 1,
-                name: "Δοκιμαστικός κρουνός 1",
-                type: "Κρουνός",
-                status: "Διαθέσιμος",
-                notes: "Δοκιμαστικό σημείο",
-                lat: 37.9386,
-                lng: 22.9322
-            },
-            {
-                id: 2,
-                name: "Δοκιμαστικός κρουνός 2",
-                type: "Κρουνός",
-                status: "Άγνωστη κατάσταση",
-                notes: "Απαιτείται έλεγχος",
-                lat: 37.9430,
-                lng: 22.9260
-            },
-            {
-                id: 3,
-                name: "Δοκιμαστική δεξαμενή",
-                type: "Δεξαμενή",
-                status: "Διαθέσιμη",
-                notes: "Δοκιμαστική καταχώρηση",
-                lat: 37.9345,
-                lng: 22.9400
-            }
-        ];
-
-        function createPopup(point) {
-            const navigationUrl =
-                "https://www.google.com/maps/dir/?api=1" +
-                "&destination=" +
-                point.lat +
-                "," +
-                point.lng;
-
-            return `
-                <div class="popup-content">
-                    <h3>${point.name}</h3>
-
-                    <p>
-                        <strong>Τύπος:</strong>
-                        ${point.type}
-                    </p>
-
-                    <p>
-                        <strong>Κατάσταση:</strong>
-                        ${point.status}
-                    </p>
-
-                    <p>
-                        <strong>Παρατηρήσεις:</strong>
-                        ${point.notes}
-                    </p>
-
-                    <p>
-                        <strong>Συντεταγμένες:</strong><br>
-                        ${point.lat.toFixed(6)},
-                        ${point.lng.toFixed(6)}
-                    </p>
-
-                    <a
-                        class="navigation-link"
-                        href="${navigationUrl}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        🧭 Πλοήγηση
-                    </a>
-                </div>
-            `;
-        }
-
-        waterPoints.forEach((point) => {
-            const marker = L.marker([
-                point.lat,
-                point.lng
-            ]).addTo(map);
-
-            marker.bindPopup(createPopup(point));
-        });
-
-        let userMarker = null;
-        let accuracyCircle = null;
-
-        const locationButton =
-            document.getElementById("locationButton");
-
-        const statusMessage =
-            document.getElementById("statusMessage");
-
-        function showStatus(message) {
-            statusMessage.textContent = message;
-            statusMessage.style.display = "block";
-
-            window.setTimeout(() => {
-                statusMessage.style.display = "none";
-            }, 4000);
-        }
-
-        function locateUser() {
-            if (!navigator.geolocation) {
-                showStatus(
-                    "Η συσκευή δεν υποστηρίζει εντοπισμό θέσης."
-                );
-                return;
-            }
-
-            showStatus("Αναζήτηση της θέσης σου...");
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const latitude =
-                        position.coords.latitude;
-
-                    const longitude =
-                        position.coords.longitude;
-
-                    const accuracy =
-                        position.coords.accuracy;
-
-                    if (userMarker) {
-                        map.removeLayer(userMarker);
-                    }
-
-                    if (accuracyCircle) {
-                        map.removeLayer(accuracyCircle);
-                    }
-
-                    userMarker = L.marker(
-                        [latitude, longitude]
-                    )
-                        .addTo(map)
-                        .bindPopup(
-                            `
-                                <strong>Η θέση μου</strong>
-                                <br>
-                                Ακρίβεια περίπου:
-                                ${Math.round(accuracy)} μέτρα
-                            `
-                        )
-                        .openPopup();
-
-                    accuracyCircle = L.circle(
-                        [latitude, longitude],
-                        {
-                            radius: accuracy
-                        }
-                    ).addTo(map);
-
-                    map.setView(
-                        [latitude, longitude],
-                        16
-                    );
-
-                    showStatus(
-                        "Η θέση σου εντοπίστηκε."
-                    );
-                },
-                (error) => {
-                    let message =
-                        "Δεν ήταν δυνατός ο εντοπισμός της θέσης.";
-
-                    if (error.code === 1) {
-                        message =
-                            "Δεν δόθηκε άδεια πρόσβασης στο GPS.";
-                    } else if (error.code === 2) {
-                        message =
-                            "Η θέση της συσκευής δεν είναι διαθέσιμη.";
-                    } else if (error.code === 3) {
-                        message =
-                            "Η αναζήτηση θέσης καθυστέρησε υπερβολικά.";
-                    }
-
-                    showStatus(message);
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 12000,
-                    maximumAge: 0
-                }
-            );
-        }
-
-        locationButton.addEventListener(
-            "click",
-            locateUser
-        );
-    </script>
-
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/points.js"></script>
+  <script src="js/gps.js"></script>
+  <script src="js/map.js"></script>
 </body>
 </html>
