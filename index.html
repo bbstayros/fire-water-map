@@ -4,6 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#8e1b16">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/app-icon.svg">
   <meta name="description" content="Χάρτης κρουνών, δεξαμενών και σημείων υδροληψίας.">
   <title>Fire Water Map</title>
   <link rel="preconnect" href="https://unpkg.com">
@@ -38,9 +42,9 @@
           <button id="locateButton" class="action-button primary" type="button">
             <span aria-hidden="true">📍</span><span>Η θέση μου · 4 km</span>
           </button>
-          <button id="showAllButton" class="action-button" type="button">
-            <span aria-hidden="true">🗺️</span><span>Όλα τα σημεία</span>
-          </button>
+          <button id="showAllButton" class="action-button" type="button"><span aria-hidden="true">🗺️</span><span>Όλα τα σημεία</span></button>
+          <button id="operationButton" class="action-button operation-button" type="button"><span>🚒</span><span>Επιχείρηση</span></button>
+          <button id="nearestButton" class="action-button" type="button"><span>💧</span><span>Πιο κοντινό νερό</span></button>
         </div>
 
         <div class="segmented" role="radiogroup" aria-label="Ακτίνα αναζήτησης">
@@ -73,6 +77,7 @@
         <div id="map" aria-label="Χάρτης σημείων νερού"></div>
         <div class="map-counter" id="mapCounter">0 σημεία</div>
         <div class="connection-badge" id="dataBadge">Φόρτωση…</div>
+        <div class="offline-status" id="offlineStatus">Έλεγχος σύνδεσης…</div>
       </section>
 
       <aside id="bottomSheet" class="bottom-sheet" aria-hidden="true">
@@ -115,8 +120,10 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
+  <script src="js/offline-store.js"></script>
   <script src="js/data-service.js"></script>
   <script src="js/public-app.js"></script>
   <script src="js/public-submission.js"></script>
+  <script src="js/pwa.js"></script>
 </body>
 </html>

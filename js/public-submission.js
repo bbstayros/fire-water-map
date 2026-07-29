@@ -50,43 +50,70 @@
     );
   });
 
+  async function sendPayload(payload) {
+    if (!window.DataService.client) throw new Error("OFFLINE");
+    const { error } = await window.DataService.client.rpc("submit_public_water_point", payload);
+    if (error) throw error;
+  }
+
+  async function syncQueue() {
+    try {
+      const count = await window.OfflineStore.syncSubmissions(sendPayload);
+      if (count) setMessage(`Συγχρονίστηκαν ${count} αποθηκευμένες καταχωρήσεις.`);
+    } catch (error) {
+      console.warn("Queue sync failed", error);
+    }
+  }
+
+  window.addEventListener("online", syncQueue);
+  syncQueue();
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const latitude = Number(document.getElementById("submissionLatitude").value);
     const longitude = Number(document.getElementById("submissionLongitude").value);
     const accuracy = Number(document.getElementById("submissionAccuracy").value);
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-      setMessage("Πρέπει πρώτα να πατήσεις «Λήψη της θέσης μου». ", true);
+      setMessage("Πρέπει πρώτα να πατήσεις «Λήψη της θέσης μου».", true);
       return;
     }
     if (!capturedAt || Date.now() - new Date(capturedAt).getTime() > 10 * 60 * 1000) {
       setMessage("Η θέση είναι παλιά. Κάνε ξανά λήψη GPS πριν την αποστολή.", true);
       return;
     }
+    const payload = {
+      p_code: document.getElementById("submissionCode").value.trim().toUpperCase(),
+      p_name: document.getElementById("submissionName").value.trim(),
+      p_category: document.getElementById("submissionCategory").value,
+      p_condition: document.getElementById("submissionCondition").value,
+      p_notes: document.getElementById("submissionNotes").value.trim() || null,
+      p_latitude: latitude,
+      p_longitude: longitude,
+      p_accuracy_m: accuracy,
+      p_captured_at: capturedAt
+    };
     const button = document.getElementById("submitPublicPoint");
     button.disabled = true;
-    setMessage("Αποστολή…");
+    setMessage(navigator.onLine ? "Αποστολή…" : "Αποθήκευση στη συσκευή…");
     try {
-      const { error } = await window.DataService.client.rpc("submit_public_water_point", {
-        p_code: document.getElementById("submissionCode").value.trim().toUpperCase(),
-        p_name: document.getElementById("submissionName").value.trim(),
-        p_category: document.getElementById("submissionCategory").value,
-        p_condition: document.getElementById("submissionCondition").value,
-        p_notes: document.getElementById("submissionNotes").value.trim() || null,
-        p_latitude: latitude,
-        p_longitude: longitude,
-        p_accuracy_m: accuracy,
-        p_captured_at: capturedAt
-      });
-      if (error) throw error;
+      if (!navigator.onLine) {
+        await window.OfflineStore.queueSubmission(payload);
+        setMessage("Η καταχώρηση αποθηκεύτηκε offline και θα σταλεί όταν επανέλθει η σύνδεση.");
+      } else {
+        await sendPayload(payload);
+        setMessage("Η καταχώρηση στάλθηκε επιτυχώς και περιμένει έλεγχο.");
+      }
       form.reset(); capturedAt = null;
       gpsStatus.textContent = "Δεν έχει ληφθεί θέση."; gpsStatus.className = "";
-      setMessage("Η καταχώρηση στάλθηκε επιτυχώς και περιμένει έλεγχο.");
-      setTimeout(hideModal, 1600);
+      setTimeout(hideModal, 1800);
     } catch (error) {
       console.error(error);
       const text = String(error?.message || "");
-      if (text.includes("INVALID_CODE")) setMessage("Ο κωδικός επαλήθευσης δεν είναι έγκυρος ή δεν είναι πλέον ενεργός.", true);
+      if (!navigator.onLine || text.includes("Failed to fetch") || text.includes("NetworkError")) {
+        await window.OfflineStore.queueSubmission(payload);
+        setMessage("Δεν υπήρχε σύνδεση. Η καταχώρηση αποθηκεύτηκε και θα συγχρονιστεί αργότερα.");
+        form.reset(); capturedAt = null;
+      } else if (text.includes("INVALID_CODE")) setMessage("Ο κωδικός επαλήθευσης δεν είναι έγκυρος ή δεν είναι πλέον ενεργός.", true);
       else if (text.includes("GPS_ACCURACY")) setMessage("Η ακρίβεια GPS είναι πολύ χαμηλή. Μετακινήσου σε ανοικτό σημείο και δοκίμασε ξανά.", true);
       else setMessage("Η αποστολή απέτυχε. Δοκίμασε ξανά σε λίγο.", true);
     } finally { button.disabled = false; }

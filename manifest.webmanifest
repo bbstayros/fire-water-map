@@ -1,0 +1,13 @@
+{
+  "name": "Fire Water Map",
+  "short_name": "Water Map",
+  "description": "Χάρτης σημείων νερού για επιχειρησιακή χρήση στην Κορινθία.",
+  "lang": "el",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f3f5f6",
+  "theme_color": "#8e1b16",
+  "icons": [{"src":"icons/app-icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

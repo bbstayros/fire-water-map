@@ -61,24 +61,35 @@
   }
 
   async function publicPoints() {
+    const offline = window.OfflineStore;
     if (!client) {
-      return { points: await loadFallback(), source: "demo" };
+      const points = await loadFallback();
+      offline?.cachePoints(points);
+      return { points, source: "demo" };
     }
 
-    const { data, error } = await client
-      .from("water_points")
-      .select("*")
-      .eq("publication_status", "published")
-      .order("name", { ascending: true });
-
-    if (error) {
-      throw error;
+    try {
+      const { data, error } = await client
+        .from("water_points")
+        .select("*")
+        .eq("publication_status", "published")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      const points = (data || []).map(normalise);
+      offline?.cachePoints(points);
+      return { points, source: "supabase" };
+    } catch (error) {
+      const cached = offline?.cachedPoints();
+      if (cached?.points?.length) {
+        return { points: cached.points.map(normalise), source: "offline", savedAt: cached.savedAt };
+      }
+      try {
+        const points = await loadFallback();
+        return { points, source: "demo" };
+      } catch {
+        throw error;
+      }
     }
-
-    return {
-      points: (data || []).map(normalise),
-      source: "supabase"
-    };
   }
 
   async function getSession() {
