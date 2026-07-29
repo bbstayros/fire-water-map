@@ -28,8 +28,34 @@
     <div id="map" aria-label="Διαδραστικός χάρτης σημείων υδροληψίας"></div>
 
     <div class="map-toolbar" aria-label="Εργαλεία χάρτη">
+      <section class="radius-control" aria-label="Ακτίνα κοντινών σημείων">
+        <span class="radius-title">Ακτίνα κοντινών σημείων</span>
+
+        <div class="radius-options" role="radiogroup" aria-label="Επιλογή ακτίνας">
+          <label>
+            <input type="radio" name="nearbyRadius" value="2">
+            <span>2 km</span>
+          </label>
+
+          <label>
+            <input type="radio" name="nearbyRadius" value="4" checked>
+            <span>4 km</span>
+          </label>
+
+          <label>
+            <input type="radio" name="nearbyRadius" value="6">
+            <span>6 km</span>
+          </label>
+
+          <label>
+            <input type="radio" name="nearbyRadius" value="10">
+            <span>10 km</span>
+          </label>
+        </div>
+      </section>
+
       <button id="locationButton" class="tool-button primary" type="button">
-        📍 Η θέση μου
+        📍 Η θέση μου · 4 km
       </button>
 
       <button id="fitPointsButton" class="tool-button" type="button">

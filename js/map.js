@@ -30,6 +30,8 @@
   let statusTimer = null;
   let userPosition = null;
   let nearbyMode = false;
+  let selectedRadiusKm = Number(config.nearbyRadiusKm) || 4;
+  let searchRadiusCircle = null;
 
   function showStatus(message) {
     window.clearTimeout(statusTimer);
@@ -71,7 +73,7 @@
       userPosition.longitude,
       markerItem.latitude,
       markerItem.longitude
-    ) <= config.nearbyRadiusKm;
+    ) <= selectedRadiusKm;
   }
 
   function updateVisibleLayers() {
@@ -159,31 +161,98 @@
     });
   });
 
-  document.getElementById("locationButton").addEventListener("click", () => {
+  const locationButton = document.getElementById("locationButton");
+  const radiusInputs = document.querySelectorAll('input[name="nearbyRadius"]');
+
+  function updateLocationButtonLabel() {
+    locationButton.textContent = `📍 Η θέση μου · ${selectedRadiusKm} km`;
+  }
+
+  function drawSearchRadius() {
+    if (searchRadiusCircle) {
+      map.removeLayer(searchRadiusCircle);
+      searchRadiusCircle = null;
+    }
+
+    if (!nearbyMode || !userPosition) {
+      return;
+    }
+
+    searchRadiusCircle = L.circle(
+      [userPosition.latitude, userPosition.longitude],
+      {
+        radius: selectedRadiusKm * 1000,
+        weight: 2,
+        opacity: 0.7,
+        fillOpacity: 0.05,
+        dashArray: "8 7",
+        interactive: false
+      }
+    ).addTo(map);
+  }
+
+  function applyNearbyRadius() {
+    if (!nearbyMode || !userPosition) {
+      return;
+    }
+
+    drawSearchRadius();
+    const visibleMarkers = updateVisibleLayers();
+
+    if (visibleMarkers.length === 0) {
+      map.fitBounds(searchRadiusCircle.getBounds(), {
+        padding: [20, 20],
+        maxZoom: 15
+      });
+
+      showStatus(
+        `Δεν βρέθηκαν ενεργοποιημένα σημεία σε ακτίνα ${selectedRadiusKm} km.`
+      );
+      return;
+    }
+
+    const layersToFit = [...visibleMarkers, searchRadiusCircle];
+    fitToMarkers(layersToFit);
+
+    showStatus(
+      `Εμφανίζονται ${visibleMarkers.length} σημεία σε ακτίνα ${selectedRadiusKm} km.`
+    );
+  }
+
+  radiusInputs.forEach((input) => {
+    input.addEventListener("change", () => {
+      if (!input.checked) {
+        return;
+      }
+
+      selectedRadiusKm = Number(input.value);
+      updateLocationButtonLabel();
+
+      if (nearbyMode && userPosition) {
+        applyNearbyRadius();
+      }
+    });
+  });
+
+  updateLocationButtonLabel();
+
+  locationButton.addEventListener("click", () => {
     window.UserLocation.locate(map, showStatus, {
       onSuccess(position) {
         userPosition = position;
         nearbyMode = true;
-
-        const visibleMarkers = updateVisibleLayers();
-
-        if (visibleMarkers.length === 0) {
-          showStatus(
-            `Δεν βρέθηκαν ενεργοποιημένα σημεία σε ακτίνα ${config.nearbyRadiusKm} km.`
-          );
-          return;
-        }
-
-        fitToMarkers(visibleMarkers);
-        showStatus(
-          `Εμφανίζονται ${visibleMarkers.length} σημεία σε ακτίνα ${config.nearbyRadiusKm} km.`
-        );
+        applyNearbyRadius();
       }
     });
   });
 
   document.getElementById("fitPointsButton").addEventListener("click", () => {
     nearbyMode = false;
+
+    if (searchRadiusCircle) {
+      map.removeLayer(searchRadiusCircle);
+      searchRadiusCircle = null;
+    }
 
     Object.values(filterInputs).forEach((input) => {
       input.checked = true;

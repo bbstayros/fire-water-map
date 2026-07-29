@@ -434,3 +434,77 @@ textarea {
   font-size: 12px;
   font-weight: bold;
 }
+
+
+/* Μεγάλα και ξεκάθαρα πλήκτρα ακτίνας για χρήση υπό πίεση */
+.radius-control {
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: var(--shadow);
+}
+
+.radius-title {
+  display: block;
+  padding: 7px 10px 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.radius-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 0 6px 7px;
+}
+
+.radius-options label {
+  cursor: pointer;
+}
+
+.radius-options input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.radius-options span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  min-height: 40px;
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  background: #fff;
+  font-size: 13px;
+  font-weight: bold;
+  user-select: none;
+}
+
+.radius-options input:checked + span {
+  border-color: var(--blue);
+  color: #fff;
+  background: var(--blue);
+}
+
+.radius-options input:focus-visible + span {
+  outline: 3px solid rgba(21, 101, 192, 0.35);
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .radius-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .radius-options span {
+    min-width: 62px;
+    min-height: 42px;
+  }
+}
