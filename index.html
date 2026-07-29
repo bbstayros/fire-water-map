@@ -25,6 +25,7 @@
         </span>
       </a>
       <div class="header-actions">
+        <button id="installAppButton" class="install-app-button hidden" type="button" aria-label="Εγκατάσταση εφαρμογής" title="Εγκατάσταση εφαρμογής">⬇️ <span>Εγκατάσταση</span></button>
         <button id="openSubmissionButton" class="submission-header-button" type="button" aria-label="Καταχώρηση σημείου">＋ <span>Καταχώρηση</span></button>
         <a class="icon-button admin-panel-link" href="admin.html" aria-label="Διαχείριση" title="Διαχείριση">⚙️</a>
       </div>
@@ -87,6 +88,16 @@
       </aside>
 
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+      <div id="installHelpModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="installHelpTitle">
+        <section class="install-help-card">
+          <button id="closeInstallHelp" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>
+          <h2 id="installHelpTitle">Εγκατάσταση εφαρμογής</h2>
+          <p id="installHelpText"></p>
+          <button id="installHelpOk" class="action-button primary full" type="button">Εντάξει</button>
+        </section>
+      </div>
+
       <div id="submissionModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="submissionTitle">
         <section class="submission-modal">
           <button id="closeSubmissionButton" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>

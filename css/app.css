@@ -19,3 +19,9 @@ button:disabled{opacity:.65;cursor:wait}.connection-badge.error{color:var(--bad)
 .operation-mode .control-panel{background:rgba(23,32,42,.96);color:#fff}.operation-mode .search-wrap,.operation-mode .segmented,.operation-mode .filter-grid{display:none}.operation-mode .quick-actions{margin-top:0}.operation-mode .map-counter{font-size:15px}.operation-mode .connection-badge{display:none}.operation-mode .offline-status{top:16px}
 .water-marker.available{filter:drop-shadow(0 0 5px rgba(22,131,75,.9))}.water-marker.unavailable{filter:grayscale(1);opacity:.55}.water-marker.unknown{opacity:.8}
 @media(max-width:700px){.quick-actions{grid-template-columns:1fr 1fr}.quick-actions .action-button{font-size:13px;padding:8px}.offline-status{top:auto;right:12px;bottom:62px}.operation-mode .offline-status{top:auto;bottom:62px}.operation-mode .control-panel{width:calc(100% - 24px);left:12px;top:12px;padding:10px}.operation-mode .quick-actions{grid-template-columns:1fr 1fr}}
+
+/* v2.3.1 install button and install help */
+.install-app-button{min-height:46px;border:1px solid #b9d8c5;border-radius:14px;padding:0 13px;background:#eef8f2;color:var(--ok);font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.install-help-card{position:relative;width:min(440px,100%);padding:24px;background:#fff;border-radius:22px;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+.install-help-card h2{margin:0 40px 12px 0}.install-help-card p{color:var(--muted);line-height:1.55;margin:0 0 18px}
+@media(max-width:650px){.install-app-button{width:46px;padding:0;font-size:19px}.install-app-button span{display:none}.install-help-card{align-self:end;width:100%;border-radius:24px 24px 0 0;padding:22px 18px calc(18px + env(safe-area-inset-bottom))}}
