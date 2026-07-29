@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#8e1b16">
+  <meta name="description" content="Χάρτης κρουνών, δεξαμενών και σημείων υδροληψίας.">
   <title>Fire Water Map</title>
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -13,10 +14,10 @@
   <div class="app-shell">
     <header class="topbar">
       <a class="brand" href="index.html" aria-label="Αρχική">
-        <img src="icons/logo.svg" alt="" class="brand-logo">
+        <img src="icons/logo.svg" alt="Λογότυπο Συλλόγου" class="brand-logo">
         <span class="brand-copy">
           <strong>Fire Water Map</strong>
-          <small>Εθελοντές Πυροπροστασίας Λουτρακίου–Περαχώρας</small>
+          <small id="organisationName"></small>
         </span>
       </a>
       <a class="icon-button" href="admin.html" aria-label="Διαχείριση" title="Διαχείριση">⚙️</a>
@@ -32,10 +33,10 @@
 
         <div class="quick-actions">
           <button id="locateButton" class="action-button primary" type="button">
-            <span aria-hidden="true">📍</span><span>Η θέση μου</span>
+            <span aria-hidden="true">📍</span><span>Η θέση μου · 4 km</span>
           </button>
           <button id="showAllButton" class="action-button" type="button">
-            <span aria-hidden="true">🗺️</span><span>Όλα</span>
+            <span aria-hidden="true">🗺️</span><span>Όλα τα σημεία</span>
           </button>
         </div>
 
@@ -47,9 +48,21 @@
         </div>
 
         <div class="filter-grid" aria-label="Φίλτρα κατηγοριών">
-          <label class="filter-chip hydrant"><input type="checkbox" value="hydrant" checked><img src="icons/hydrant.svg" alt=""><span>Κρουνοί</span></label>
-          <label class="filter-chip tank"><input type="checkbox" value="tank" checked><img src="icons/tank.svg" alt=""><span>Δεξαμενές</span></label>
-          <label class="filter-chip source"><input type="checkbox" value="water_source" checked><img src="icons/water-source.svg" alt=""><span>Υδροληψίες</span></label>
+          <label class="filter-chip hydrant">
+            <input type="checkbox" value="hydrant" checked>
+            <img src="icons/hydrant.svg" alt="">
+            <span>Κρουνοί</span>
+          </label>
+          <label class="filter-chip tank">
+            <input type="checkbox" value="tank" checked>
+            <img src="icons/tank.svg" alt="">
+            <span>Δεξαμενές</span>
+          </label>
+          <label class="filter-chip source">
+            <input type="checkbox" value="water_source" checked>
+            <img src="icons/water-source.svg" alt="">
+            <span>Υδροληψίες</span>
+          </label>
         </div>
       </section>
 
