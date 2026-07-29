@@ -1,94 +1,96 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="el">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#9f1d18">
-  <title>Καταχώρηση σημείου</title>
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#8e1b16">
+  <title>Διαχείριση · Fire Water Map</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/app.css">
 </head>
-<body class="admin-page">
-  <header class="app-header">
-    <div class="brand">
-      <img class="brand-logo" src="icons/logo.svg" alt="Λογότυπο Συλλόγου">
-      <div class="brand-text">
-        <h1>Καταχώρηση νέου σημείου</h1>
-        <p>Σύλλογος Εθελοντών Πυροπροστασίας Δασών Λουτρακίου - Περαχώρας</p>
+<body class="admin-body">
+  <div id="loginView" class="login-view">
+    <form id="loginForm" class="login-card">
+      <img src="icons/logo.svg" alt="" class="login-logo">
+      <h1>Διαχείριση χάρτη</h1>
+      <p>Σύνδεση εξουσιοδοτημένου μέλους</p>
+      <label>Email<input id="loginEmail" type="email" required autocomplete="username"></label>
+      <label>Κωδικός<input id="loginPassword" type="password" required autocomplete="current-password"></label>
+      <button class="action-button primary full" type="submit">Σύνδεση</button>
+      <a class="back-link" href="index.html">← Επιστροφή στον χάρτη</a>
+      <div id="loginMessage" class="form-message" aria-live="polite"></div>
+    </form>
+  </div>
+
+  <div id="dashboardView" class="dashboard hidden">
+    <aside class="sidebar">
+      <a class="sidebar-brand" href="index.html"><img src="icons/logo.svg" alt=""><span><strong>Fire Water Map</strong><small>Διαχείριση</small></span></a>
+      <nav>
+        <button class="nav-item active" data-view="overview">📊 <span>Επισκόπηση</span></button>
+        <button class="nav-item" data-view="points">📍 <span>Σημεία</span></button>
+        <button class="nav-item" data-view="editor">➕ <span>Νέο σημείο</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <a class="nav-item link" href="index.html">🗺️ <span>Δημόσιος χάρτης</span></a>
+        <button id="logoutButton" class="nav-item danger">↪ <span>Αποσύνδεση</span></button>
       </div>
-    </div>
+    </aside>
 
-    <a class="admin-link" href="index.html">← Επιστροφή στον χάρτη</a>
-  </header>
+    <main class="dashboard-main">
+      <header class="dashboard-header">
+        <div><h1 id="viewTitle">Επισκόπηση</h1><p id="viewSubtitle">Συνολική εικόνα των σημείων νερού</p></div>
+        <button id="mobileMenu" class="icon-button" type="button" aria-label="Μενού">☰</button>
+      </header>
 
-  <main class="admin-layout">
-    <section class="admin-panel">
-      <div class="notice">
-        Η φόρμα είναι έτοιμη ως περιβάλλον εργασίας. Η πραγματική αποθήκευση και η
-        έγκριση με κωδικό θα ενεργοποιηθούν όταν συνδέσουμε το ασφαλές backend.
-      </div>
-
-      <form id="pointForm">
-        <label for="category">Κατηγορία</label>
-        <select id="category" required>
-          <option value="hydrant">Κρουνός</option>
-          <option value="tank">Δεξαμενή</option>
-          <option value="water_source">Σημείο υδροληψίας</option>
-        </select>
-
-        <label for="name">Ονομασία</label>
-        <input id="name" type="text" maxlength="120" required
-               placeholder="π.χ. Κρουνός Περαχώρας 01">
-
-        <div class="form-grid">
-          <div>
-            <label for="latitude">Γεωγραφικό πλάτος</label>
-            <input id="latitude" type="number" step="any" required>
-          </div>
-          <div>
-            <label for="longitude">Γεωγραφικό μήκος</label>
-            <input id="longitude" type="number" step="any" required>
-          </div>
+      <section id="overviewView" class="dashboard-section">
+        <div class="stats-grid">
+          <article class="stat-card"><span>Σύνολο</span><strong id="statTotal">0</strong></article>
+          <article class="stat-card"><span>Κρουνοί</span><strong id="statHydrants">0</strong></article>
+          <article class="stat-card"><span>Δεξαμενές</span><strong id="statTanks">0</strong></article>
+          <article class="stat-card"><span>Υδροληψίες</span><strong id="statSources">0</strong></article>
         </div>
+        <div class="dashboard-grid">
+          <article class="panel"><div class="panel-heading"><h2>Κατάσταση σημείων</h2></div><div id="conditionSummary" class="summary-list"></div></article>
+          <article class="panel"><div class="panel-heading"><h2>Πρόσφατα σημεία</h2></div><div id="recentPoints" class="compact-list"></div></article>
+        </div>
+      </section>
 
-        <button id="adminGpsButton" class="form-button secondary" type="button">
-          📍 Χρήση GPS συσκευής
-        </button>
+      <section id="pointsView" class="dashboard-section hidden">
+        <div class="panel">
+          <div class="panel-heading responsive"><div><h2>Όλα τα σημεία</h2><p>Αναζήτηση, επεξεργασία και δημοσίευση</p></div><button id="newPointButton" class="action-button primary" type="button">＋ Νέο σημείο</button></div>
+          <div class="table-tools"><input id="adminSearch" type="search" placeholder="Αναζήτηση…"><select id="adminCategory"><option value="">Όλες οι κατηγορίες</option><option value="hydrant">Κρουνοί</option><option value="tank">Δεξαμενές</option><option value="water_source">Υδροληψίες</option></select></div>
+          <div class="table-wrap"><table><thead><tr><th>Ονομασία</th><th>Κατηγορία</th><th>Κατάσταση</th><th>Δημοσίευση</th><th></th></tr></thead><tbody id="pointsTableBody"></tbody></table></div>
+        </div>
+      </section>
 
-        <p class="helper-text">
-          Μπορείς επίσης να πατήσεις πάνω στον χάρτη για να ορίσεις ή να διορθώσεις τη θέση.
-        </p>
-
-        <label for="condition">Κατάσταση</label>
-        <select id="condition" required>
-          <option value="available">Διαθέσιμο / λειτουργικό</option>
-          <option value="unknown">Άγνωστη κατάσταση</option>
-          <option value="unavailable">Μη διαθέσιμο / εκτός λειτουργίας</option>
-        </select>
-
-        <label for="notes">Παρατηρήσεις</label>
-        <textarea id="notes" rows="4" maxlength="600"
-                  placeholder="Πρόσβαση, παροχή, σύνδεσμος, ιδιαίτερες πληροφορίες..."></textarea>
-
-        <label for="lastChecked">Ημερομηνία τελευταίου ελέγχου</label>
-        <input id="lastChecked" type="date">
-
-        <button class="form-button primary" type="submit">
-          Προεπισκόπηση καταχώρησης
-        </button>
-      </form>
-
-      <div id="previewBox" class="preview-box" hidden></div>
-    </section>
-
-    <section class="admin-map-section">
-      <div id="adminMap" aria-label="Χάρτης επιλογής θέσης"></div>
-    </section>
-  </main>
+      <section id="editorView" class="dashboard-section hidden">
+        <div class="editor-layout">
+          <form id="pointForm" class="panel point-form">
+            <div class="panel-heading"><div><h2 id="formTitle">Νέο σημείο</h2><p>Συμπλήρωσε τα βασικά στοιχεία</p></div></div>
+            <input id="pointId" type="hidden">
+            <div class="form-grid">
+              <label class="full">Ονομασία<input id="pointName" type="text" maxlength="150" required placeholder="π.χ. Κρουνός Αγίου Γεωργίου"></label>
+              <label>Κατηγορία<select id="pointCategory" required><option value="hydrant">Κρουνός</option><option value="tank">Δεξαμενή</option><option value="water_source">Σημείο υδροληψίας</option></select></label>
+              <label>Κατάσταση<select id="pointCondition"><option value="available">Λειτουργικό</option><option value="unknown">Άγνωστη</option><option value="unavailable">Εκτός λειτουργίας</option></select></label>
+              <label>Δημοσίευση<select id="pointPublication"><option value="pending">Εκκρεμές</option><option value="published">Δημοσιευμένο</option><option value="hidden">Κρυφό</option></select></label>
+              <label>Τελευταίος έλεγχος<input id="pointLastChecked" type="date"></label>
+              <label>Γεωγραφικό πλάτος<input id="pointLatitude" type="number" step="any" required></label>
+              <label>Γεωγραφικό μήκος<input id="pointLongitude" type="number" step="any" required></label>
+              <label class="full">Παρατηρήσεις<textarea id="pointNotes" rows="4" placeholder="Πρόσβαση, παροχή, ιδιαιτερότητες…"></textarea></label>
+            </div>
+            <div class="form-actions"><button id="useGpsButton" class="action-button" type="button">📡 Χρήση GPS</button><button class="action-button primary" type="submit">💾 Αποθήκευση</button><button id="cancelEditButton" class="action-button ghost" type="button">Ακύρωση</button></div>
+            <div id="formMessage" class="form-message" aria-live="polite"></div>
+          </form>
+          <div class="panel editor-map-panel"><div class="panel-heading"><h2>Θέση στον χάρτη</h2><p>Πάτησε ή μετακίνησε τον δείκτη</p></div><div id="adminMap"></div></div>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
-  <script src="js/admin.js"></script>
+  <script src="js/data-service.js"></script>
+  <script src="js/admin-app.js"></script>
 </body>
 </html>

@@ -1,99 +1,78 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="el">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#9f1d18">
-  <title>Χάρτης Σημείων Υδροληψίας</title>
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#8e1b16">
+  <title>Fire Water Map</title>
+  <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-  <header class="app-header">
-    <div class="brand">
-      <img class="brand-logo" src="icons/logo.svg" alt="Λογότυπο Συλλόγου">
-      <div class="brand-text">
-        <h1>Σύλλογος Εθελοντών Πυροπροστασίας Δασών Λουτρακίου - Περαχώρας</h1>
-        <p>Χάρτης δεξαμενών, πυροσβεστικών κρουνών και σημείων υδροληψίας</p>
-      </div>
-    </div>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="Αρχική">
+        <img src="icons/logo.svg" alt="" class="brand-logo">
+        <span class="brand-copy">
+          <strong>Fire Water Map</strong>
+          <small>Εθελοντές Πυροπροστασίας Λουτρακίου–Περαχώρας</small>
+        </span>
+      </a>
+      <a class="icon-button" href="admin.html" aria-label="Διαχείριση" title="Διαχείριση">⚙️</a>
+    </header>
 
-    <a class="admin-link" href="admin.html" aria-label="Μετάβαση στη διαχείριση">
-      ⚙️ Διαχείριση
-    </a>
-  </header>
+    <main class="map-page">
+      <section class="control-panel" aria-label="Εργαλεία χάρτη">
+        <div class="search-wrap">
+          <span aria-hidden="true">🔎</span>
+          <input id="searchInput" type="search" placeholder="Αναζήτηση σημείου…" autocomplete="off">
+          <button id="clearSearch" class="clear-search" type="button" aria-label="Καθαρισμός">×</button>
+        </div>
 
-  <main class="map-shell">
-    <div id="map" aria-label="Διαδραστικός χάρτης σημείων υδροληψίας"></div>
+        <div class="quick-actions">
+          <button id="locateButton" class="action-button primary" type="button">
+            <span aria-hidden="true">📍</span><span>Η θέση μου</span>
+          </button>
+          <button id="showAllButton" class="action-button" type="button">
+            <span aria-hidden="true">🗺️</span><span>Όλα</span>
+          </button>
+        </div>
 
-    <div class="map-toolbar" aria-label="Εργαλεία χάρτη">
-      <section class="radius-control" aria-label="Ακτίνα κοντινών σημείων">
-        <span class="radius-title">Ακτίνα κοντινών σημείων</span>
+        <div class="segmented" role="radiogroup" aria-label="Ακτίνα αναζήτησης">
+          <label><input type="radio" name="radius" value="2"><span>2 km</span></label>
+          <label><input type="radio" name="radius" value="4" checked><span>4 km</span></label>
+          <label><input type="radio" name="radius" value="6"><span>6 km</span></label>
+          <label><input type="radio" name="radius" value="10"><span>10 km</span></label>
+        </div>
 
-        <div class="radius-options" role="radiogroup" aria-label="Επιλογή ακτίνας">
-          <label>
-            <input type="radio" name="nearbyRadius" value="2">
-            <span>2 km</span>
-          </label>
-
-          <label>
-            <input type="radio" name="nearbyRadius" value="4" checked>
-            <span>4 km</span>
-          </label>
-
-          <label>
-            <input type="radio" name="nearbyRadius" value="6">
-            <span>6 km</span>
-          </label>
-
-          <label>
-            <input type="radio" name="nearbyRadius" value="10">
-            <span>10 km</span>
-          </label>
+        <div class="filter-grid" aria-label="Φίλτρα κατηγοριών">
+          <label class="filter-chip hydrant"><input type="checkbox" value="hydrant" checked><img src="icons/hydrant.svg" alt=""><span>Κρουνοί</span></label>
+          <label class="filter-chip tank"><input type="checkbox" value="tank" checked><img src="icons/tank.svg" alt=""><span>Δεξαμενές</span></label>
+          <label class="filter-chip source"><input type="checkbox" value="water_source" checked><img src="icons/water-source.svg" alt=""><span>Υδροληψίες</span></label>
         </div>
       </section>
 
-      <button id="locationButton" class="tool-button primary" type="button">
-        📍 Η θέση μου · 4 km
-      </button>
+      <section class="map-stage">
+        <div id="map" aria-label="Χάρτης σημείων νερού"></div>
+        <div class="map-counter" id="mapCounter">0 σημεία</div>
+        <div class="connection-badge" id="dataBadge">Φόρτωση…</div>
+      </section>
 
-      <button id="fitPointsButton" class="tool-button" type="button">
-        🗺️ Όλα τα σημεία
-      </button>
-    </div>
+      <aside id="bottomSheet" class="bottom-sheet" aria-hidden="true">
+        <button id="sheetClose" class="sheet-close" type="button" aria-label="Κλείσιμο">×</button>
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <div id="sheetContent"></div>
+      </aside>
 
-    <section class="legend filter-panel" aria-label="Υπόμνημα και φίλτρα">
-      <h2>Υπόμνημα & φίλτρα</h2>
-
-      <label class="filter-row" for="filterHydrants">
-        <input id="filterHydrants" type="checkbox" checked>
-        <img src="icons/hydrant.svg" alt="">
-        <span>Κρουνοί</span>
-      </label>
-
-      <label class="filter-row" for="filterTanks">
-        <input id="filterTanks" type="checkbox" checked>
-        <img src="icons/tank.svg" alt="">
-        <span>Δεξαμενές</span>
-      </label>
-
-      <label class="filter-row" for="filterWaterSources">
-        <input id="filterWaterSources" type="checkbox" checked>
-        <img src="icons/water-source.svg" alt="">
-        <span>Σημεία υδροληψίας</span>
-      </label>
-
-      <p id="visiblePointsCount" class="visible-count">Ορατά σημεία: 0</p>
-    </section>
-
-    <div id="statusMessage" class="status-message" role="status" aria-live="polite"></div>
-  </main>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </main>
+  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
-  <script src="js/points.js"></script>
-  <script src="js/gps.js"></script>
-  <script src="js/map.js"></script>
+  <script src="js/data-service.js"></script>
+  <script src="js/public-app.js"></script>
 </body>
 </html>
