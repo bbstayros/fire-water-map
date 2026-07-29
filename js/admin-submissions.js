@@ -1,0 +1,86 @@
+(() => {
+  "use strict";
+  const ds = window.DataService;
+  let profile = null;
+  let submissions = [];
+  let codes = [];
+  const labels = {hydrant:"Κρουνός",tank:"Δεξαμενή",water_source:"Υδροληψία"};
+  const conditions = {available:"Λειτουργικό",unknown:"Άγνωστη",unavailable:"Εκτός λειτουργίας"};
+  const esc = (v) => String(v ?? "").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
+
+  window.addEventListener("admin-dashboard-ready", async (event) => {
+    profile = event.detail.profile;
+    await loadSubmissions();
+    if (profile.role === "admin") await loadCodes();
+  });
+  document.querySelector('[data-view="submissions"]').addEventListener("click", loadSubmissions);
+  document.querySelector('[data-view="codes"]').addEventListener("click", () => profile?.role === "admin" && loadCodes());
+  document.getElementById("refreshSubmissionsButton").addEventListener("click", loadSubmissions);
+  document.getElementById("refreshCodesButton").addEventListener("click", loadCodes);
+  document.getElementById("submissionSearch").addEventListener("input", renderSubmissions);
+  document.getElementById("submissionStatusFilter").addEventListener("change", renderSubmissions);
+
+  async function loadSubmissions() {
+    try {
+      const { data, error } = await ds.client.from("public_water_submissions").select("*").order("created_at", {ascending:false});
+      if (error) throw error;
+      submissions = data || [];
+      const pending = submissions.filter(x=>x.status === "pending").length;
+      const badge = document.getElementById("pendingSubmissionBadge");
+      badge.textContent = pending; badge.classList.toggle("hidden", pending === 0);
+      renderSubmissions();
+    } catch (e) { console.error(e); document.getElementById("submissionAdminList").innerHTML = `<p class="form-message error">${esc(e.message)}</p>`; }
+  }
+  function renderSubmissions() {
+    const q = document.getElementById("submissionSearch").value.trim().toLocaleLowerCase("el");
+    const status = document.getElementById("submissionStatusFilter").value;
+    const rows = submissions.filter(x=>(!status||x.status===status)&&(!q||`${x.name} ${x.notes||""} ${x.code_label||""}`.toLocaleLowerCase("el").includes(q)));
+    document.getElementById("submissionAdminList").innerHTML = rows.length ? rows.map(x=>`
+      <article class="submission-card ${x.status}">
+        <div class="submission-card-head"><div><span class="submission-kind">${labels[x.category]||x.category}</span><h3>${esc(x.name)}</h3></div><span class="submission-state ${x.status}">${statusLabel(x.status)}</span></div>
+        <div class="submission-meta"><span>📍 ${Number(x.latitude).toFixed(6)}, ${Number(x.longitude).toFixed(6)}</span><span>🎯 ±${Math.round(x.accuracy_m||0)} m</span><span>🕒 ${new Date(x.created_at).toLocaleString("el-GR")}</span><span>🔑 ${esc(x.code_label||"—")}</span></div>
+        <p>${esc(x.notes||"Δεν υπάρχουν παρατηρήσεις.")}</p>
+        <div class="submission-actions">
+          <a class="action-button" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${x.latitude},${x.longitude}">Χάρτης</a>
+          ${x.status === "pending" ? `<button class="action-button" data-approve-pending="${x.id}">Έγκριση ως εκκρεμές</button><button class="action-button primary" data-approve-publish="${x.id}">Έγκριση & δημοσίευση</button><button class="action-button danger-button" data-reject="${x.id}">Απόρριψη</button>` : ""}
+        </div>
+      </article>`).join("") : '<p class="empty-table">Δεν υπάρχουν υποβολές με αυτά τα φίλτρα.</p>';
+    document.querySelectorAll("[data-approve-pending]").forEach(b=>b.onclick=()=>approve(b.dataset.approvePending,"pending"));
+    document.querySelectorAll("[data-approve-publish]").forEach(b=>b.onclick=()=>approve(b.dataset.approvePublish,"published"));
+    document.querySelectorAll("[data-reject]").forEach(b=>b.onclick=()=>reject(b.dataset.reject));
+  }
+  async function approve(id, publication) {
+    const s = submissions.find(x=>x.id===id); if(!s)return;
+    if(!confirm(`Να εγκριθεί η υποβολή «${s.name}»;`))return;
+    try {
+      await ds.savePoint({name:s.name,category:s.category,condition:s.condition,publication_status:publication,last_checked_at:new Date().toISOString().slice(0,10),latitude:s.latitude,longitude:s.longitude,notes:s.notes||`Υποβολή κινητού · ακρίβεια ±${Math.round(s.accuracy_m||0)} m`});
+      const {error}=await ds.client.from("public_water_submissions").update({status:"approved",reviewed_at:new Date().toISOString(),reviewed_by:(await ds.client.auth.getUser()).data.user.id}).eq("id",id); if(error)throw error;
+      await loadSubmissions();
+    } catch(e){alert(e.message||"Η έγκριση απέτυχε.");}
+  }
+  async function reject(id) {
+    const reason=prompt("Προαιρετικός λόγος απόρριψης:",""); if(reason===null)return;
+    const {data:{user}}=await ds.client.auth.getUser();
+    const {error}=await ds.client.from("public_water_submissions").update({status:"rejected",review_notes:reason||null,reviewed_at:new Date().toISOString(),reviewed_by:user.id}).eq("id",id);
+    if(error)alert(error.message); else loadSubmissions();
+  }
+  function statusLabel(s){return {pending:"Εκκρεμής",approved:"Εγκεκριμένη",rejected:"Απορριφθείσα"}[s]||s;}
+
+  document.getElementById("verificationCodeForm").addEventListener("submit", async (event)=>{
+    event.preventDefault(); const out=document.getElementById("verificationCodeMessage"); out.textContent="Δημιουργία…";out.classList.remove("error");
+    try {
+      const {error}=await ds.client.rpc("create_verification_code",{p_code:document.getElementById("newVerificationCode").value.trim().toUpperCase(),p_label:document.getElementById("newVerificationLabel").value.trim(),p_max_uses:Number(document.getElementById("newVerificationMaxUses").value)||null,p_expires_at:document.getElementById("newVerificationExpiry").value||null});
+      if(error)throw error; event.target.reset(); out.textContent="Ο κωδικός δημιουργήθηκε."; await loadCodes();
+    } catch(e){out.textContent=e.message||"Η δημιουργία απέτυχε.";out.classList.add("error");}
+  });
+  async function loadCodes(){
+    if(profile?.role!=="admin")return;
+    const {data,error}=await ds.client.rpc("list_verification_codes");
+    if(error){document.getElementById("verificationCodesList").innerHTML=`<p class="form-message error">${esc(error.message)}</p>`;return;}
+    codes=data||[]; renderCodes();
+  }
+  function renderCodes(){
+    document.getElementById("verificationCodesList").innerHTML=codes.length?codes.map(c=>`<article class="code-card ${c.is_active?'':'inactive'}"><div><strong>${esc(c.label)}</strong><small>${c.use_count}${c.max_uses?` / ${c.max_uses}`:""} χρήσεις · ${c.expires_at?`λήξη ${new Date(c.expires_at).toLocaleDateString("el-GR")}`:"χωρίς λήξη"}</small></div>${c.is_active?`<button class="action-button danger-button" data-disable-code="${c.id}">Απενεργοποίηση</button>`:'<span class="publication-status hidden">Ανενεργός</span>'}</article>`).join(""):'<p class="empty-table">Δεν υπάρχουν κωδικοί.</p>';
+    document.querySelectorAll("[data-disable-code]").forEach(b=>b.onclick=async()=>{if(!confirm("Να απενεργοποιηθεί ο κωδικός;"))return;const{error}=await ds.client.rpc("deactivate_verification_code",{p_id:b.dataset.disableCode});if(error)alert(error.message);else loadCodes();});
+  }
+})();

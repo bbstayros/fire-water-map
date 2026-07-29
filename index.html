@@ -20,7 +20,10 @@
           <small id="organisationName"></small>
         </span>
       </a>
-      <a class="icon-button" href="admin.html" aria-label="Διαχείριση" title="Διαχείριση">⚙️</a>
+      <div class="header-actions">
+        <button id="openSubmissionButton" class="submission-header-button" type="button" aria-label="Καταχώρηση σημείου">＋ <span>Καταχώρηση</span></button>
+        <a class="icon-button admin-panel-link" href="admin.html" aria-label="Διαχείριση" title="Διαχείριση">⚙️</a>
+      </div>
     </header>
 
     <main class="map-page">
@@ -79,6 +82,33 @@
       </aside>
 
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
+      <div id="submissionModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="submissionTitle">
+        <section class="submission-modal">
+          <button id="closeSubmissionButton" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>
+          <div class="submission-heading">
+            <span class="submission-icon">📍</span>
+            <div><h2 id="submissionTitle">Καταχώρηση σημείου νερού</h2><p>Η υποβολή θα ελεγχθεί πριν εμφανιστεί στον χάρτη.</p></div>
+          </div>
+          <form id="publicSubmissionForm" class="submission-form">
+            <div class="gps-capture-card">
+              <button id="captureSubmissionGps" class="action-button primary full" type="button">📡 Λήψη της θέσης μου</button>
+              <div id="submissionGpsStatus">Δεν έχει ληφθεί θέση.</div>
+              <input id="submissionLatitude" type="hidden"><input id="submissionLongitude" type="hidden"><input id="submissionAccuracy" type="hidden">
+            </div>
+            <label>Ονομασία ή περιγραφή<input id="submissionName" type="text" minlength="2" maxlength="150" required placeholder="π.χ. Κρουνός απέναντι από το σχολείο"></label>
+            <div class="submission-grid">
+              <label>Κατηγορία<select id="submissionCategory" required><option value="hydrant">Κρουνός</option><option value="tank">Δεξαμενή</option><option value="water_source">Σημείο υδροληψίας</option></select></label>
+              <label>Κατάσταση<select id="submissionCondition" required><option value="available">Λειτουργικό</option><option value="unavailable">Εκτός λειτουργίας</option><option value="unknown">Δεν γνωρίζω</option></select></label>
+            </div>
+            <label>Παρατηρήσεις<textarea id="submissionNotes" rows="4" maxlength="1500" placeholder="Πρόσβαση, παροχή, βλάβη ή άλλο χρήσιμο στοιχείο…"></textarea></label>
+            <label>Κωδικός επαλήθευσης<input id="submissionCode" type="text" minlength="4" maxlength="30" required autocomplete="off" autocapitalize="characters" placeholder="π.χ. ΘΒΙΣ009"></label>
+            <label class="consent-row"><input id="submissionConfirm" type="checkbox" required><span>Επιβεβαιώνω ότι βρίσκομαι στο σημείο και τα στοιχεία είναι αληθή.</span></label>
+            <button id="submitPublicPoint" class="action-button primary full" type="submit">Αποστολή για έλεγχο</button>
+            <div id="submissionMessage" class="form-message" aria-live="polite"></div>
+          </form>
+        </section>
+      </div>
+
     </main>
   </div>
 
@@ -87,5 +117,6 @@
   <script src="js/config.js"></script>
   <script src="js/data-service.js"></script>
   <script src="js/public-app.js"></script>
+  <script src="js/public-submission.js"></script>
 </body>
 </html>

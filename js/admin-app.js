@@ -70,6 +70,8 @@
     dashboard.classList.remove("hidden");
 
     await loadPoints();
+    document.querySelectorAll(".admin-only").forEach((el) => el.classList.toggle("hidden", profile.role !== "admin"));
+    window.dispatchEvent(new CustomEvent("admin-dashboard-ready", { detail: { profile } }));
     setView("overview");
   }
 
@@ -256,7 +258,9 @@
   const viewMeta = {
     overview: ["Επισκόπηση", "Συνολική εικόνα των σημείων νερού"],
     points: ["Σημεία", "Αναζήτηση και διαχείριση"],
-    editor: ["Νέο σημείο", "Καταχώρηση ή επεξεργασία"]
+    editor: ["Νέο σημείο", "Καταχώρηση ή επεξεργασία"],
+    submissions: ["Υποβολές", "Έλεγχος καταχωρήσεων από κινητό"],
+    codes: ["Κωδικοί επαλήθευσης", "Διαχείριση κωδικών δημόσιας καταχώρησης"]
   };
 
   function setView(name) {
