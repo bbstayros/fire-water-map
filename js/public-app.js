@@ -4,6 +4,14 @@
   const config = window.APP_CONFIG;
   const dataService = window.DataService;
 
+  // Hide the administration shortcut only on phones. Android tablets do not
+  // normally include the "Mobile" token, so the shortcut remains visible there.
+  const phoneUserAgent = /iPhone|iPod|Windows Phone|Android.*Mobile|BlackBerry|Opera Mini|IEMobile/i;
+  if (phoneUserAgent.test(navigator.userAgent || "")) {
+    const adminPanelLink = document.querySelector(".admin-panel-link");
+    if (adminPanelLink) adminPanelLink.style.setProperty("display", "none", "important");
+  }
+
   const map = L.map("map", {
     zoomControl: false,
     preferCanvas: true
