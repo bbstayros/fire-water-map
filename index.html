@@ -25,6 +25,7 @@
         </span>
       </a>
       <div class="header-actions">
+        <button id="offlineSetupButton" class="install-app-button" type="button" aria-label="Προετοιμασία offline πλοήγησης" title="Offline πλοήγηση">🧭 <span>Offline GPS</span></button>
         <button id="installAppButton" class="install-app-button hidden" type="button" aria-label="Εγκατάσταση εφαρμογής" title="Εγκατάσταση εφαρμογής">⬇️ <span>Εγκατάσταση</span></button>
         <button id="openSubmissionButton" class="submission-header-button" type="button" aria-label="Καταχώρηση σημείου">＋ <span>Καταχώρηση</span></button>
         <a class="icon-button admin-panel-link" href="admin.html" aria-label="Διαχείριση" title="Διαχείριση">⚙️</a>
@@ -98,6 +99,50 @@
         </section>
       </div>
 
+      <div id="navigationModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="navigationTitle">
+        <section class="navigation-card">
+          <button id="closeNavigationModal" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>
+          <h2 id="navigationTitle">Πλοήγηση προς σημείο</h2>
+          <p id="navigationTarget" class="navigation-target"></p>
+          <div class="navigation-options">
+            <button id="startOfflineCompass" class="action-button primary full" type="button">🧭 Offline κατεύθυνση</button>
+            <button id="openNativeMaps" class="action-button full" type="button">🗺️ Άνοιγμα εφαρμογής χαρτών</button>
+            <button id="openGoogleMaps" class="action-button full" type="button">Google Maps</button>
+          </div>
+          <p class="navigation-note">Η offline κατεύθυνση λειτουργεί χωρίς ίντερνετ με GPS, απόσταση και βέλος. Δεν υπολογίζει δρόμους ή στροφές.</p>
+        </section>
+      </div>
+
+      <div id="compassModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="compassTitle">
+        <section class="compass-card">
+          <button id="closeCompassModal" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>
+          <h2 id="compassTitle">Offline κατεύθυνση</h2>
+          <p id="compassTarget" class="navigation-target"></p>
+          <div class="compass-ring"><div id="compassArrow" class="compass-arrow">➤</div></div>
+          <div id="compassDistance" class="compass-distance">Αναμονή GPS…</div>
+          <div id="compassBearing" class="compass-bearing"></div>
+          <div id="compassAccuracy" class="compass-accuracy"></div>
+          <button id="enableCompassPermission" class="action-button full hidden" type="button">Ενεργοποίηση πυξίδας</button>
+          <button id="centerNavigationMap" class="action-button full" type="button">📍 Προβολή στον χάρτη</button>
+          <p class="navigation-warning">Ακολουθεί ευθεία κατεύθυνση προς το σημείο. Έλεγξε δρόμους, εμπόδια και την ασφάλεια της διαδρομής.</p>
+        </section>
+      </div>
+
+      <div id="offlineSetupModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="offlineSetupTitle">
+        <section class="offline-setup-card">
+          <button id="closeOfflineSetup" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>
+          <h2 id="offlineSetupTitle">Προετοιμασία offline πλοήγησης</h2>
+          <div id="offlineDeviceSummary" class="device-summary"></div>
+          <div id="offlineInstructions" class="offline-instructions"></div>
+          <div class="offline-setup-actions">
+            <button id="openMapsForSetup" class="action-button primary full" type="button">Άνοιγμα χαρτών στην Κορινθία</button>
+            <button id="markOfflineReady" class="action-button full" type="button">✓ Έκανα τη λήψη</button>
+            <button id="testGpsButton" class="action-button full" type="button">📡 Δοκιμή GPS</button>
+          </div>
+          <div id="offlineSetupStatus" class="offline-setup-status"></div>
+        </section>
+      </div>
+
       <div id="submissionModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="submissionTitle">
         <section class="submission-modal">
           <button id="closeSubmissionButton" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>
@@ -135,6 +180,8 @@
   <script src="js/data-service.js"></script>
   <script src="js/public-app.js"></script>
   <script src="js/public-submission.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/offline-setup.js"></script>
   <script src="js/pwa.js"></script>
 </body>
 </html>
