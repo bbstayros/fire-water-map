@@ -14,6 +14,7 @@
     form: document.getElementById("crewStartForm"),
     code: document.getElementById("crewOperationCode"),
     name: document.getElementById("crewVehicleName"),
+    members: document.getElementById("crewMembers"),
     keepAwake: document.getElementById("crewKeepScreenOn"),
     startMessage: document.getElementById("crewStartMessage"),
     activePanel: document.getElementById("crewActivePanel"),
@@ -36,6 +37,7 @@
     roomName: localStorage.getItem("fwm-operation-name") || "",
     sessionId: localStorage.getItem("fwm-crew-session") || "",
     vehicleName: localStorage.getItem("fwm-crew-name") || "",
+    crewMembers: localStorage.getItem("fwm-crew-members") || "",
     deviceId: getDeviceId(),
     sharing: false,
     watchId: null,
@@ -50,6 +52,7 @@
 
   ui.code.value = state.code;
   ui.name.value = state.vehicleName;
+  if (ui.members) ui.members.value = state.crewMembers;
 
   function getDeviceId() {
     let value = localStorage.getItem("fwm-device-id");
@@ -200,13 +203,17 @@
 
     const code = ui.code.value.trim().toUpperCase();
     const vehicleName = ui.name.value.trim();
+    const crewMembers = ui.members?.value.trim() || "";
+    const sharedName = crewMembers
+      ? `${vehicleName} · ${crewMembers}`
+      : vehicleName;
 
     message("Έλεγχος κωδικού και έναρξη…");
 
     try {
       const rows = await rpc("join_crew", {
         p_code: code,
-        p_vehicle_name: vehicleName,
+        p_vehicle_name: sharedName,
         p_device_id: state.deviceId
       });
 
@@ -215,6 +222,7 @@
 
       state.code = code;
       state.vehicleName = vehicleName;
+      state.crewMembers = crewMembers;
       state.roomName = result.room_name;
       state.sessionId = result.session_id;
       state.sharing = true;
@@ -222,10 +230,11 @@
       localStorage.setItem("fwm-operation-code", state.code);
       localStorage.setItem("fwm-operation-name", state.roomName);
       localStorage.setItem("fwm-crew-name", state.vehicleName);
+      localStorage.setItem("fwm-crew-members", state.crewMembers);
       localStorage.setItem("fwm-crew-session", state.sessionId);
 
       ui.activePanel.classList.remove("hidden");
-      ui.activeName.textContent = `${state.vehicleName} · ${state.roomName}`;
+      ui.activeName.textContent = `${state.vehicleName}${state.crewMembers ? ` · ${state.crewMembers}` : ""} · ${state.roomName}`;
       ui.open.classList.add("sharing");
       ui.open.querySelector("span:last-child").textContent = "Κοινοποίηση ενεργή";
       message("");
@@ -516,7 +525,7 @@
     openModal(ui.modal);
     if (state.sharing) {
       ui.activePanel.classList.remove("hidden");
-      ui.activeName.textContent = `${state.vehicleName} · ${state.roomName}`;
+      ui.activeName.textContent = `${state.vehicleName}${state.crewMembers ? ` · ${state.crewMembers}` : ""} · ${state.roomName}`;
     }
   });
   ui.list.addEventListener("click", () => {

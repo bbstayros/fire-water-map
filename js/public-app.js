@@ -11,7 +11,7 @@
   const conditions={available:"Λειτουργικό",unknown:"Άγνωστη κατάσταση",unavailable:"Εκτός λειτουργίας"};
   const state={points:[],markers:[],user:null,userMarker:null,accuracyCircle:null,radiusCircle:null,radiusKm:Number(config.defaultRadiusKm)||4,nearby:false,operation:false,watchId:null,follow:true};
   const toastEl=document.getElementById("toast"),sheet=document.getElementById("bottomSheet"),sheetContent=document.getElementById("sheetContent"),locateButton=document.getElementById("locateButton");let toastTimer;
-  document.getElementById("organisationName").textContent=config.organisation;
+  const organisationName=document.getElementById("organisationName");if(organisationName)organisationName.textContent=config.organisation;
   function toast(m,t="info"){clearTimeout(toastTimer);toastEl.textContent=m;toastEl.dataset.type=t;toastEl.classList.add("show");toastTimer=setTimeout(()=>toastEl.classList.remove("show"),3800);}
   function distanceKm(a,b,c,d){const R=6371,r=x=>x*Math.PI/180,dl=r(c-a),dn=r(d-b),q=Math.sin(dl/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(q));}
   function formatDistance(k){return k<1?`${Math.round(k*1000)} m από εσένα`:`${k.toFixed(k<10?1:0)} km από εσένα`;}
@@ -34,7 +34,7 @@
   document.getElementById("showAllButton").onclick=()=>{state.nearby=false;document.querySelectorAll(".dock-filter input").forEach(i=>i.checked=true);document.getElementById("searchInput").value="";const m=render();fitMarkers(m);toast("Εμφανίζονται όλα τα σημεία.");};
   locateButton.onclick=()=>{state.nearby=!state.nearby;if(state.nearby){state.radiusKm=4;startLiveGps();toast("Η θέση μου ενεργοποιήθηκε · ακτίνα 4 km.");}else{stopLiveGps();clearUserLocation();toast("Η θέση μου απενεργοποιήθηκε · εμφανίζονται όλα τα επιλεγμένα σημεία.");}syncLocateButton();const markers=render();if(!state.nearby)fitMarkers(markers);};
   syncLocateButton();
-  document.getElementById("nearestButton").onclick=nearest;
+  const nearestButton=document.getElementById("nearestButton");if(nearestButton)nearestButton.onclick=nearest;
   document.getElementById("operationButton").onclick=()=>{state.operation=!state.operation;document.body.classList.toggle("operation-mode",state.operation);document.getElementById("operationButton").classList.toggle("active",state.operation);document.getElementById("operationButton").querySelector("span:last-child").textContent=state.operation?"Έξοδος":"Επιχείρηση";if(state.operation){state.nearby=true;startLiveGps();toast("Επιχειρησιακή λειτουργία: μόνο λειτουργικά σημεία σε ακτίνα 4 km.");}else{toast("Κανονική λειτουργία.");}syncLocateButton();render();};
   map.on("dragstart",()=>{if(state.operation)state.follow=false;});map.on("locationfound",drawUser);
   function esc(v){return String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));}

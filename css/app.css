@@ -191,3 +191,50 @@ button:disabled{opacity:.65;cursor:wait}.connection-badge.error{color:var(--bad)
 @media(min-width:701px){
   .install-menu-action{display:none!important}
 }
+
+
+/* v2.8 simplified and repaired interface */
+.resource-dock{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  width:min(560px,calc(100% - 28px))!important;
+}
+.toolbar-count{
+  display:inline-grid;
+  place-items:center;
+  min-width:18px;
+  height:18px;
+  margin-left:4px;
+  padding:0 5px;
+  border-radius:999px;
+  background:var(--brand);
+  color:#fff;
+  font-size:10px;
+  vertical-align:middle;
+}
+.toolbar-toggle.is-on .toolbar-count{
+  background:var(--ok);
+}
+#operationToggleButton{
+  position:relative;
+}
+#operationToggleButton.is-on{
+  border-color:#b8dbc7;
+  background:#eef8f2;
+  color:#0c6b3b;
+}
+#operationToggleButton.is-on .state-dot{
+  background:var(--ok);
+  box-shadow:0 0 0 3px rgba(22,131,75,.15);
+}
+#operationToggleButton.is-on .state-label{
+  color:var(--ok);
+}
+
+@media(max-width:700px){
+  .resource-dock{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  .dock-filter{
+    font-size:10px!important;
+  }
+}

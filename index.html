@@ -47,7 +47,7 @@
 
         <button id="operationToggleButton" class="toolbar-toggle" type="button" aria-pressed="false">
           <span class="toggle-icon" aria-hidden="true">🚒</span>
-          <span class="toggle-copy"><strong>Επιχείρηση</strong><small><i class="state-dot"></i><b class="state-label">OFF</b></small></span>
+          <span class="toggle-copy"><strong>Επιχείρηση <b id="operationCrewBadge" class="toolbar-count hidden">0</b></strong><small><i class="state-dot"></i><b class="state-label">OFF</b></small></span>
         </button>
 
         <div class="legacy-action-hooks" aria-hidden="true">
@@ -77,11 +77,6 @@
           <img src="icons/water-source.svg" alt="">
           <span>Υδροληψίες</span>
         </label>
-        <button id="openCrewHub" class="dock-crew" type="button" aria-label="Πληρώματα">
-          <span aria-hidden="true">👥</span>
-          <span>Πληρώματα</span>
-          <b id="dockCrewBadge" class="dock-count hidden">0</b>
-        </button>
       </nav>
 
       <div id="appMenuModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="appMenuTitle">
@@ -196,8 +191,11 @@
             <label>Κωδικός επιχείρησης
               <input id="crewOperationCode" type="text" minlength="4" maxlength="30" required autocomplete="off" autocapitalize="characters" placeholder="π.χ. ΦΩΤΙΑ2026">
             </label>
-            <label>Όνομα οχήματος ή πληρώματος
-              <input id="crewVehicleName" type="text" minlength="2" maxlength="60" required autocomplete="off" placeholder="π.χ. Όχημα 1">
+            <label>Όνομα οχήματος
+              <input id="crewVehicleName" type="text" minlength="2" maxlength="40" required autocomplete="off" placeholder="π.χ. Όχημα 1">
+            </label>
+            <label>Πλήρωμα
+              <input id="crewMembers" type="text" maxlength="80" autocomplete="off" placeholder="π.χ. Σταύρος, Γιώργος, Μαρία">
             </label>
             <label class="consent-row">
               <input id="crewKeepScreenOn" type="checkbox" checked>
