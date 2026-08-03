@@ -36,6 +36,7 @@
         <button class="nav-item" data-view="editor" type="button">➕ <span>Νέο σημείο</span></button>
         <button class="nav-item" data-view="submissions" type="button">📥 <span>Υποβολές</span><b id="pendingSubmissionBadge" class="nav-badge hidden">0</b></button>
         <button class="nav-item admin-only" data-view="codes" type="button">🔑 <span>Κωδικοί</span></button>
+        <button class="nav-item admin-only" data-view="operations" type="button">🚒 <span>Live επιχειρήσεις</span></button>
       </nav>
       <div class="sidebar-user">
         <strong id="signedInUser"></strong>
@@ -159,6 +160,41 @@
           <div class="panel"><div class="panel-heading responsive"><div><h2>Ενεργοί κωδικοί</h2><p>Χρήσεις, λήξη και άμεση απενεργοποίηση.</p></div><button id="refreshCodesButton" class="action-button" type="button">↻ Ανανέωση</button></div><div id="verificationCodesList" class="codes-list"></div></div>
         </div>
       </section>
+      <section id="operationsView" class="dashboard-section hidden">
+        <div class="dashboard-grid codes-grid">
+          <form id="operationRoomForm" class="panel point-form">
+            <div class="panel-heading">
+              <div>
+                <h2>Νέα live επιχείρηση</h2>
+                <p>Δώσε στα πληρώματα τον ίδιο κωδικό για να βλέπουν μόνο μεταξύ τους τα στίγματα.</p>
+              </div>
+            </div>
+            <label>Ονομασία επιχείρησης
+              <input id="operationRoomName" type="text" minlength="2" maxlength="100" required placeholder="π.χ. Περιπολία Γερανείων">
+            </label>
+            <label>Κωδικός επιχείρησης
+              <input id="operationRoomCode" type="text" minlength="4" maxlength="30" required autocapitalize="characters" autocomplete="off" placeholder="π.χ. ΓΕΡΑΝΕΙΑ26">
+            </label>
+            <label>Λήξη
+              <input id="operationRoomExpiry" type="datetime-local">
+            </label>
+            <button class="action-button primary full" type="submit">Δημιουργία επιχείρησης</button>
+            <div id="operationRoomMessage" class="form-message" aria-live="polite"></div>
+          </form>
+
+          <div class="panel">
+            <div class="panel-heading responsive">
+              <div>
+                <h2>Ενεργές επιχειρήσεις</h2>
+                <p>Οι πραγματικοί κωδικοί δεν εμφανίζονται μετά τη δημιουργία.</p>
+              </div>
+              <button id="refreshOperationRooms" class="action-button" type="button">↻ Ανανέωση</button>
+            </div>
+            <div id="operationRoomsList" class="codes-list"></div>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -169,6 +205,7 @@
   <script src="js/data-service.js"></script>
   <script src="js/admin-app.js"></script>
   <script src="js/admin-submissions.js"></script>
+  <script src="js/admin-live-crews.js"></script>
   <script src="js/pwa.js"></script>
 </body>
 </html>
