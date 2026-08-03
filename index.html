@@ -29,55 +29,113 @@
       </a>
       <div class="header-actions">
         <button id="installAppButton" class="install-app-button hidden" type="button" aria-label="Εγκατάσταση εφαρμογής" title="Εγκατάσταση εφαρμογής">⬇️ <span>Εγκατάσταση</span></button>
-        <button id="openSubmissionButton" class="submission-header-button" type="button" aria-label="Καταχώρηση σημείου">＋ <span>Καταχώρηση</span></button>
+        <button id="openSubmissionButton" class="submission-header-button mobile-submission-fab" type="button" aria-label="Καταχώρηση σημείου">＋ <span>Καταχώρηση</span></button>
         <a class="icon-button admin-panel-link" href="admin.html" aria-label="Διαχείριση" title="Διαχείριση">⚙️</a>
       </div>
     </header>
 
     <main class="map-page">
-      <section class="control-panel" aria-label="Εργαλεία χάρτη">
+      <section class="control-panel compact-controls" aria-label="Εργαλεία χάρτη">
         <div class="search-wrap">
           <span aria-hidden="true">🔎</span>
           <input id="searchInput" type="search" placeholder="Αναζήτηση σημείου…" autocomplete="off">
           <button id="clearSearch" class="clear-search" type="button" aria-label="Καθαρισμός">×</button>
         </div>
 
-        <div class="quick-actions">
-          <button id="locateButton" class="action-button primary" type="button">
+        <div class="primary-map-actions">
+          <button id="locateButton" class="action-button primary compact-action" type="button">
             <span aria-hidden="true">📍</span><span>Η θέση μου · 4 km</span>
           </button>
-          <button id="showAllButton" class="action-button" type="button"><span aria-hidden="true">🗺️</span><span>Όλα τα σημεία</span></button>
-          <button id="operationButton" class="action-button operation-button" type="button"><span>🚒</span><span>Επιχείρηση</span></button>
-          <button id="nearestButton" class="action-button" type="button"><span>💧</span><span>Πιο κοντινό νερό</span></button>
-          <button id="openCrewButton" class="action-button crew-action-button" type="button"><span>🚒</span><span>Έναρξη πληρώματος</span></button>
-          <button id="crewListButton" class="action-button" type="button"><span>👥</span><span>Πληρώματα <b id="crewCountBadge" class="inline-badge hidden">0</b></span></button>
+          <button id="openOperationHub" class="action-button compact-action" type="button">
+            <span aria-hidden="true">🚒</span>
+            <span>Επιχείρηση</span>
+            <b id="operationCrewBadge" class="inline-badge hidden">0</b>
+          </button>
         </div>
 
-        <div class="segmented" role="radiogroup" aria-label="Ακτίνα αναζήτησης">
-          <label><input type="radio" name="radius" value="2"><span>2 km</span></label>
-          <label><input type="radio" name="radius" value="4" checked><span>4 km</span></label>
-          <label><input type="radio" name="radius" value="6"><span>6 km</span></label>
-          <label><input type="radio" name="radius" value="10"><span>10 km</span></label>
-        </div>
-
-        <div class="filter-grid" aria-label="Φίλτρα κατηγοριών">
-          <label class="filter-chip hydrant">
-            <input type="checkbox" value="hydrant" checked>
-            <img src="icons/hydrant.svg" alt="">
-            <span>Κρουνοί</span>
-          </label>
-          <label class="filter-chip tank">
-            <input type="checkbox" value="tank" checked>
-            <img src="icons/tank.svg" alt="">
-            <span>Δεξαμενές</span>
-          </label>
-          <label class="filter-chip source">
-            <input type="checkbox" value="water_source" checked>
-            <img src="icons/water-source.svg" alt="">
-            <span>Υδροληψίες</span>
-          </label>
+        <!-- Τα παρακάτω κουμπιά διατηρούνται για τη λειτουργία του υπάρχοντος κώδικα,
+             αλλά ανοίγουν πλέον μέσα από το ενιαίο μενού Επιχείρησης. -->
+        <div class="legacy-action-hooks" aria-hidden="true">
+          <button id="showAllButton" type="button" tabindex="-1">Όλα τα σημεία</button>
+          <button id="operationButton" type="button" tabindex="-1"><span>🚒</span><span>Επιχείρηση</span></button>
+          <button id="nearestButton" type="button" tabindex="-1">Πιο κοντινό νερό</button>
+          <button id="openCrewButton" type="button" tabindex="-1"><span>🚒</span><span>Έναρξη πληρώματος</span></button>
+          <button id="crewListButton" type="button" tabindex="-1"><span>👥</span><span>Πληρώματα <b id="crewCountBadge" class="inline-badge hidden">0</b></span></button>
         </div>
       </section>
+
+      <nav class="mobile-filter-dock" aria-label="Φίλτρα σημείων">
+        <label class="dock-filter hydrant">
+          <input type="checkbox" value="hydrant" checked>
+          <img src="icons/hydrant.svg" alt="">
+          <span>Κρουνοί</span>
+        </label>
+        <label class="dock-filter tank">
+          <input type="checkbox" value="tank" checked>
+          <img src="icons/tank.svg" alt="">
+          <span>Δεξαμενές</span>
+        </label>
+        <label class="dock-filter source">
+          <input type="checkbox" value="water_source" checked>
+          <img src="icons/water-source.svg" alt="">
+          <span>Υδροληψίες</span>
+        </label>
+        <button id="openFilterOptions" class="dock-more" type="button" aria-label="Περισσότερα φίλτρα">☰</button>
+      </nav>
+
+      <div id="filterOptionsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="filterOptionsTitle">
+        <section class="compact-sheet-card">
+          <button id="closeFilterOptions" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>
+          <div class="sheet-section-heading">
+            <span>⚙️</span>
+            <div>
+              <h2 id="filterOptionsTitle">Επιλογές χάρτη</h2>
+              <p>Ρύθμισε την ακτίνα ή εμφάνισε ξανά όλα τα σημεία.</p>
+            </div>
+          </div>
+
+          <h3 class="compact-section-title">Ακτίνα γύρω από τη θέση μου</h3>
+          <div class="segmented compact-segmented" role="radiogroup" aria-label="Ακτίνα αναζήτησης">
+            <label><input type="radio" name="radius" value="2"><span>2 km</span></label>
+            <label><input type="radio" name="radius" value="4" checked><span>4 km</span></label>
+            <label><input type="radio" name="radius" value="6"><span>6 km</span></label>
+            <label><input type="radio" name="radius" value="10"><span>10 km</span></label>
+          </div>
+
+          <button id="showAllProxy" class="action-button full" type="button">🗺️ Εμφάνιση όλων των σημείων</button>
+        </section>
+      </div>
+
+      <div id="operationHubModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="operationHubTitle">
+        <section class="compact-sheet-card operation-hub-card">
+          <button id="closeOperationHub" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>
+          <div class="sheet-section-heading">
+            <span>🚒</span>
+            <div>
+              <h2 id="operationHubTitle">Επιχείρηση και πληρώματα</h2>
+              <p>Όλες οι λειτουργίες της επιχείρησης σε ένα σημείο.</p>
+            </div>
+          </div>
+
+          <div class="operation-hub-grid">
+            <button id="operationModeProxy" class="hub-action hub-action-primary" type="button">
+              <span>🗺️</span>
+              <strong>Επιχειρησιακή προβολή</strong>
+              <small>Μόνο λειτουργικά σημεία και live GPS</small>
+            </button>
+            <button id="startCrewProxy" class="hub-action" type="button">
+              <span>📡</span>
+              <strong>Δήλωση πληρώματος</strong>
+              <small>Κοινοποίησε το στίγμα του οχήματος</small>
+            </button>
+            <button id="crewListProxy" class="hub-action" type="button">
+              <span>👥</span>
+              <strong>Προβολή πληρωμάτων</strong>
+              <small>Δες τα ενεργά οχήματα στον χάρτη</small>
+            </button>
+          </div>
+        </section>
+      </div>
 
       <section class="map-stage">
         <div id="map" aria-label="Χάρτης σημείων νερού"></div>
@@ -201,6 +259,7 @@
   <script src="js/public-app.js"></script>
   <script src="js/public-submission.js"></script>
   <script src="js/live-crews.js"></script>
+  <script src="js/public-ui.js"></script>
   <script src="js/pwa.js"></script>
 </body>
 </html>
