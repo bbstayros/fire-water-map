@@ -80,7 +80,25 @@
     codes=data||[]; renderCodes();
   }
   function renderCodes(){
-    document.getElementById("verificationCodesList").innerHTML=codes.length?codes.map(c=>`<article class="code-card ${c.is_active?'':'inactive'}"><div><strong>${esc(c.label)}</strong><small>${c.use_count}${c.max_uses?` / ${c.max_uses}`:""} χρήσεις · ${c.expires_at?`λήξη ${new Date(c.expires_at).toLocaleDateString("el-GR")}`:"χωρίς λήξη"}</small></div>${c.is_active?`<button class="action-button danger-button" data-disable-code="${c.id}">Απενεργοποίηση</button>`:'<span class="publication-status hidden">Ανενεργός</span>'}</article>`).join(""):'<p class="empty-table">Δεν υπάρχουν κωδικοί.</p>';
+    const visible=codes.filter(c=>codeFilter==="all"||(codeFilter==="active"?c.is_active:!c.is_active));
+    document.getElementById("verificationCodesList").innerHTML=visible.length?visible.map(c=>{
+      const usageLimit=c.max_uses?`${c.use_count} / ${c.max_uses}`:`${c.use_count}`;
+      const usagePercent=c.max_uses?Math.min(100,Math.round((c.use_count/c.max_uses)*100)):Math.min(100,c.use_count*5);
+      const expiry=c.expires_at?new Date(c.expires_at).toLocaleDateString("el-GR"):"Χωρίς λήξη";
+      return `<article class="code-card ${c.is_active?'':'inactive'}">
+        <div class="code-card-main">
+          <div class="code-card-title"><strong>${esc(c.label)}</strong><span class="publication-status ${c.is_active?'published':'hidden'}">${c.is_active?'Ενεργός':'Ανενεργός'}</span></div>
+          <div class="code-card-meta"><span>🔢 ${usageLimit} χρήσεις</span><span>📅 ${expiry}</span></div>
+          <div class="usage-track"><i style="width:${usagePercent}%"></i></div>
+        </div>
+        ${c.is_active?`<button class="action-button danger-button compact-danger" data-disable-code="${c.id}">Απενεργοποίηση</button>`:''}
+      </article>`;
+    }).join(""):'<p class="empty-table">Δεν υπάρχουν κωδικοί σε αυτή την κατηγορία.</p>';
     document.querySelectorAll("[data-disable-code]").forEach(b=>b.onclick=async()=>{if(!confirm("Να απενεργοποιηθεί ο κωδικός;"))return;const{error}=await ds.client.rpc("deactivate_verification_code",{p_id:b.dataset.disableCode});if(error)alert(error.message);else loadCodes();});
   }
+  document.querySelectorAll("[data-code-filter]").forEach(button=>button.addEventListener("click",()=>{
+    codeFilter=button.dataset.codeFilter;
+    document.querySelectorAll("[data-code-filter]").forEach(x=>x.classList.toggle("active",x===button));
+    renderCodes();
+  }));
 })();

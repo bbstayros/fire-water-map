@@ -19,8 +19,21 @@
     }[char]));
   }
 
+  function crewIdentity(value) {
+    const parts = String(value || "Όχημα").split(" · ");
+    return { vehicle: parts.shift() || "Όχημα", members: parts.join(" · ") };
+  }
+
+  function ageState(lastSeen, sharing) {
+    const seconds = Math.max(0, (Date.now() - new Date(lastSeen).getTime()) / 1000);
+    if (!sharing || seconds > 300) return { cls: "offline", label: `Εκτός σύνδεσης · ${Math.round(seconds/60)}΄` };
+    if (seconds > 120) return { cls: "stale", label: `Παλιό στίγμα · ${Math.round(seconds/60)}΄` };
+    if (seconds > 30) return { cls: "delayed", label: `Καθυστέρηση · ${Math.round(seconds)}΄΄` };
+    return { cls: "live", label: seconds < 10 ? "Live τώρα" : `Live πριν ${Math.round(seconds)}΄΄` };
+  }
+
   async function loadRooms() {
-    list.innerHTML = "<p>Φόρτωση…</p>";
+    list.innerHTML = '<div class="admin-loading">Φόρτωση επιχειρήσεων…</div>';
 
     const { data: rooms, error } = await ds.client
       .from("operation_rooms")
@@ -32,52 +45,48 @@
       return;
     }
 
-    const { data: crews } = await ds.client
+    const { data: crews, error: crewError } = await ds.client
       .from("crew_positions")
-      .select("room_id,is_sharing,last_seen_at");
+      .select("room_id,session_id,vehicle_name,latitude,longitude,accuracy_m,is_sharing,last_seen_at")
+      .order("last_seen_at", { ascending: false });
 
+    if (crewError) console.warn(crewError);
     const crewRows = crews || [];
 
     list.innerHTML = (rooms || []).length
       ? rooms.map(room => {
-          const activeCrewCount = crewRows.filter(row =>
-            row.room_id === room.id &&
-            row.is_sharing &&
-            Date.now() - new Date(row.last_seen_at).getTime() < 5 * 60 * 1000
-          ).length;
-
-          const expiry = room.expires_at
-            ? new Date(room.expires_at).toLocaleString("el-GR")
-            : "Χωρίς αυτόματη λήξη";
-
-          return `
-            <article class="operation-room-card ${room.is_active ? "" : "inactive"}">
-              <div class="operation-room-card-head">
-                <div>
-                  <h3>${escapeHtml(room.name)}</h3>
-                  <small>Κωδικός λήγει σε …${escapeHtml(room.code_hint)}</small>
-                </div>
-                <span class="publication-status ${room.is_active ? "published" : "hidden"}">
-                  ${room.is_active ? "Ενεργή" : "Κλειστή"}
-                </span>
+          const roomCrews = crewRows.filter(row => row.room_id === room.id);
+          const activeCrewCount = roomCrews.filter(row => row.is_sharing && Date.now() - new Date(row.last_seen_at).getTime() < 5*60*1000).length;
+          const expiry = room.expires_at ? new Date(room.expires_at).toLocaleString("el-GR") : "Χωρίς αυτόματη λήξη";
+          const vehicles = roomCrews.length ? `<div class="admin-vehicle-list">${roomCrews.map(row => {
+            const identity=crewIdentity(row.vehicle_name), status=ageState(row.last_seen_at,row.is_sharing);
+            const accuracy=Number.isFinite(Number(row.accuracy_m))?`±${Math.round(Number(row.accuracy_m))} m`:"—";
+            const mapLink=row.latitude!=null&&row.longitude!=null?`https://www.google.com/maps?q=${row.latitude},${row.longitude}`:"";
+            return `<article class="admin-vehicle-card ${status.cls}">
+              <div class="admin-vehicle-icon">🚒</div>
+              <div class="admin-vehicle-copy">
+                <div class="admin-vehicle-title"><strong>${escapeHtml(identity.vehicle)}</strong><span>${escapeHtml(status.label)}</span></div>
+                <div class="admin-vehicle-meta"><span>🎯 ${accuracy}</span><span>👥 ${escapeHtml(identity.members||"Χωρίς δηλωμένο πλήρωμα")}</span></div>
               </div>
-              <div class="operation-room-meta">
-                <span>🚒 ${activeCrewCount} ενεργά πληρώματα</span>
-                <span>🕒 ${escapeHtml(expiry)}</span>
-              </div>
-              ${room.is_active ? `<button class="action-button danger-button" type="button" data-close-room="${room.id}">Κλείσιμο επιχείρησης</button>` : ""}
+              ${mapLink?`<a class="vehicle-map-button" target="_blank" rel="noopener" href="${mapLink}">Χάρτης</a>`:""}
             </article>`;
+          }).join("")}</div>` : '<p class="empty-operation">Δεν έχει συνδεθεί ακόμη όχημα.</p>';
+          return `<article class="operation-room-card ${room.is_active ? "" : "inactive"}">
+            <div class="operation-room-card-head">
+              <div><div class="operation-title-row"><h3>${escapeHtml(room.name)}</h3><span class="publication-status ${room.is_active ? "published" : "hidden"}">${room.is_active ? "Ενεργή" : "Κλειστή"}</span></div><small>Κωδικός …${escapeHtml(room.code_hint)} · ${escapeHtml(expiry)}</small></div>
+              <div class="operation-count"><strong>${activeCrewCount}</strong><span>ενεργά</span></div>
+            </div>
+            ${vehicles}
+            ${room.is_active ? `<div class="operation-footer"><button class="action-button danger-button" type="button" data-close-room="${room.id}">Κλείσιμο επιχείρησης</button></div>` : ""}
+          </article>`;
         }).join("")
       : '<p class="empty-table">Δεν υπάρχουν live επιχειρήσεις.</p>';
 
     list.querySelectorAll("[data-close-room]").forEach(button => {
       button.addEventListener("click", async () => {
         if (!confirm("Να κλείσει η επιχείρηση και να σταματήσουν όλα τα live στίγματα;")) return;
-        const { error } = await ds.client.rpc("close_operation_room", {
-          p_room_id: button.dataset.closeRoom
-        });
-        if (error) alert(error.message);
-        else loadRooms();
+        const { error } = await ds.client.rpc("close_operation_room", { p_room_id: button.dataset.closeRoom });
+        if (error) alert(error.message); else loadRooms();
       });
     });
   }

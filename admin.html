@@ -29,11 +29,15 @@
   </div>
 
   <div id="dashboardView" class="dashboard hidden">
-    <aside class="sidebar">
+    <div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
+    <aside id="adminSidebar" class="sidebar">
+      <div class="sidebar-top">
       <a class="sidebar-brand" href="index.html">
         <img src="icons/logo.svg" alt="">
         <span><strong>Fire Water Map</strong><small>Διαχείριση</small></span>
       </a>
+      <button id="collapseSidebar" class="sidebar-collapse" type="button" title="Σύμπτυξη μενού" aria-label="Σύμπτυξη μενού">‹</button>
+      </div>
       <nav>
         <button class="nav-item active" data-view="overview" type="button">📊 <span>Επισκόπηση</span></button>
         <button class="nav-item" data-view="points" type="button">📍 <span>Σημεία</span></button>
@@ -58,15 +62,18 @@
           <h1 id="viewTitle">Επισκόπηση</h1>
           <p id="viewSubtitle">Συνολική εικόνα των σημείων νερού</p>
         </div>
-        <button id="mobileMenu" class="icon-button" type="button" aria-label="Μενού">☰</button>
+        <div class="dashboard-header-actions">
+          <a class="header-public-link" href="index.html">🗺️ Δημόσιος χάρτης</a>
+          <button id="mobileMenu" class="icon-button" type="button" aria-label="Μενού">☰</button>
+        </div>
       </header>
 
       <section id="overviewView" class="dashboard-section">
         <div class="stats-grid">
-          <article class="stat-card"><span>Σύνολο</span><strong id="statTotal">0</strong></article>
-          <article class="stat-card"><span>Κρουνοί</span><strong id="statHydrants">0</strong></article>
-          <article class="stat-card"><span>Δεξαμενές</span><strong id="statTanks">0</strong></article>
-          <article class="stat-card"><span>Υδροληψίες</span><strong id="statSources">0</strong></article>
+          <article class="stat-card total"><i>📍</i><div><span>Σύνολο σημείων</span><strong id="statTotal">0</strong></div></article>
+          <article class="stat-card hydrants"><i>🚰</i><div><span>Κρουνοί</span><strong id="statHydrants">0</strong></div></article>
+          <article class="stat-card tanks"><i>🛢️</i><div><span>Δεξαμενές</span><strong id="statTanks">0</strong></div></article>
+          <article class="stat-card sources"><i>💧</i><div><span>Υδροληψίες</span><strong id="statSources">0</strong></div></article>
         </div>
         <div class="dashboard-grid">
           <article class="panel">
@@ -161,7 +168,7 @@
             <button class="action-button primary full" type="submit">Δημιουργία κωδικού</button>
             <div id="verificationCodeMessage" class="form-message" aria-live="polite"></div>
           </form>
-          <div class="panel"><div class="panel-heading responsive"><div><h2>Ενεργοί κωδικοί</h2><p>Χρήσεις, λήξη και άμεση απενεργοποίηση.</p></div><button id="refreshCodesButton" class="action-button" type="button">↻ Ανανέωση</button></div><div id="verificationCodesList" class="codes-list"></div></div>
+          <div class="panel codes-panel"><div class="panel-heading responsive"><div><h2>Κωδικοί επαλήθευσης</h2><p>Χρήσεις, λήξη και κατάσταση πρόσβασης.</p></div><button id="refreshCodesButton" class="action-button" type="button">↻ Ανανέωση</button></div><div class="admin-segmented" id="codeStatusTabs"><button class="active" data-code-filter="active" type="button">Ενεργοί</button><button data-code-filter="all" type="button">Όλοι</button><button data-code-filter="inactive" type="button">Ανενεργοί</button></div><div id="verificationCodesList" class="codes-list"></div></div>
         </div>
       </section>
       <section id="operationsView" class="dashboard-section hidden">
@@ -189,8 +196,8 @@
           <div class="panel">
             <div class="panel-heading responsive">
               <div>
-                <h2>Ενεργές επιχειρήσεις</h2>
-                <p>Οι πραγματικοί κωδικοί δεν εμφανίζονται μετά τη δημιουργία.</p>
+                <h2>Επιχειρήσεις και οχήματα</h2>
+                <p>Ζωντανή κατάσταση οχημάτων και τελευταία γνωστά στίγματα.</p>
               </div>
               <button id="refreshOperationRooms" class="action-button" type="button">↻ Ανανέωση</button>
             </div>
@@ -210,6 +217,7 @@
   <script src="js/admin-app.js"></script>
   <script src="js/admin-submissions.js"></script>
   <script src="js/admin-live-crews.js"></script>
+  <script src="js/admin-ui.js"></script>
   <script src="js/pwa.js"></script>
 </body>
 </html>
