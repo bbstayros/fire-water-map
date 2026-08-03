@@ -242,7 +242,7 @@
       startGpsWatch();
       await requestWakeLock();
       startTimers();
-      openCrewList();
+      pollCrews();
     } catch (error) {
       console.error(error);
       message(readableError(error), true);
@@ -266,7 +266,7 @@
       message("");
       closeModal(ui.modal);
       startTimers();
-      openCrewList();
+      pollCrews();
     } catch (error) {
       message(readableError(error), true);
     }
@@ -336,6 +336,22 @@
     return `πριν από ${Math.round(seconds / 60)} λεπτά`;
   }
 
+  function crewIdentity(row) {
+    const raw = String(row?.vehicle_name || "").trim();
+    const parts = raw.split(" · ");
+    return {
+      vehicle: parts.shift() || "Όχημα",
+      members: parts.join(" · ").trim()
+    };
+  }
+
+  function liveLine(row) {
+    const age = crewAge(row);
+    if (!row.is_sharing || age > 300) return `Τελευταίο στίγμα ${timeAgo(age)}`;
+    if (age > 30) return `Ενημέρωση ${timeAgo(age)}`;
+    return `Live ${timeAgo(age)}`;
+  }
+
   async function pollCrews() {
     if (!state.code || !navigator.onLine) return;
 
@@ -362,6 +378,7 @@
 
     ui.crewList.innerHTML = state.crews.map(row => {
       const cls = crewClass(row);
+      const identity = crewIdentity(row);
       const accuracy = Number.isFinite(Number(row.accuracy_m))
         ? `±${Math.round(Number(row.accuracy_m))} m`
         : "—";
@@ -369,12 +386,13 @@
       return `
         <article class="crew-list-item ${cls}">
           <div>
-            <h3>${escapeHtml(row.vehicle_name)}</h3>
+            <h3>🚒 ${escapeHtml(identity.vehicle)}</h3>
             <div class="crew-list-meta">
-              <span>● ${crewStatus(row)}</span>
+              <span>● ${escapeHtml(liveLine(row))}</span>
               <span>🎯 ${accuracy}</span>
               ${distance ? `<span>📍 ${distance}</span>` : ""}
             </div>
+            ${identity.members ? `<p class="crew-members-line"><strong>Πλήρωμα:</strong> ${escapeHtml(identity.members)}</p>` : ""}
           </div>
           <div class="crew-list-actions">
             <button class="action-button" type="button" data-show-crew="${row.session_id}">Στον χάρτη</button>
@@ -410,7 +428,8 @@
 
   function markerHtml(row) {
     const cls = crewClass(row);
-    return `<div class="crew-marker ${cls}" title="${escapeHtml(row.vehicle_name)}">🚒</div>`;
+    const identity = crewIdentity(row);
+    return `<div class="crew-marker ${cls}" title="${escapeHtml(identity.vehicle)}">🚒</div>`;
   }
 
   function renderCrewMarkers() {
@@ -440,7 +459,8 @@
         marker.setIcon(icon);
       }
 
-      marker.bindTooltip(escapeHtml(row.vehicle_name), {
+      const identity = crewIdentity(row);
+      marker.bindTooltip(escapeHtml(identity.vehicle), {
         permanent: true,
         direction: "top",
         offset: [0, -20],
@@ -465,16 +485,40 @@
     const map = window.FireWaterMap?.map;
     if (!map) return;
 
+    const identity = crewIdentity(row);
+    const accuracy = Number.isFinite(Number(row.accuracy_m))
+      ? `±${Math.round(Number(row.accuracy_m))} m`
+      : "—";
+
     const html = `
-      <div class="sheet-type"><span style="font-size:28px">🚒</span><span>Live πλήρωμα</span></div>
-      <h2>${escapeHtml(row.vehicle_name)}</h2>
-      <div class="status-line ${crewClass(row) === "live" ? "available" : "unknown"}">${crewStatus(row)}</div>
-      ${distance ? `<p class="distance">📍 ${distance}</p>` : ""}
-      <div class="sheet-details">
-        <div><span>Ακρίβεια GPS</span><strong>±${Math.round(Number(row.accuracy_m || 0))} m</strong></div>
-        <div><span>Τελευταία ενημέρωση</span><strong>${new Date(row.last_seen_at).toLocaleTimeString("el-GR")}</strong></div>
+      <div class="vehicle-sheet-heading">
+        <span class="vehicle-sheet-icon">🚒</span>
+        <div>
+          <small>Όχημα επιχείρησης</small>
+          <h2>${escapeHtml(identity.vehicle)}</h2>
+        </div>
       </div>
-      <button class="navigate-button" type="button" data-inline-nav="${row.session_id}">🧭 Πλοήγηση προς το όχημα</button>
+
+      <div class="vehicle-live-line ${crewClass(row)}">
+        <span class="vehicle-live-dot"></span>
+        <strong>${escapeHtml(liveLine(row))}</strong>
+      </div>
+
+      ${distance ? `<p class="distance">📍 ${distance}</p>` : ""}
+
+      <div class="vehicle-info-card">
+        <span>Ακρίβεια GPS</span>
+        <strong>${accuracy}</strong>
+      </div>
+
+      <div class="vehicle-crew-block">
+        <span>Πλήρωμα:</span>
+        <strong>${identity.members ? escapeHtml(identity.members) : "Δεν δηλώθηκαν ονόματα"}</strong>
+      </div>
+
+      <button class="navigate-button" type="button" data-inline-nav="${row.session_id}">
+        🧭 Πλοήγηση προς το όχημα
+      </button>
     `;
 
     const sheet = document.getElementById("bottomSheet");

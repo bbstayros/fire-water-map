@@ -238,3 +238,92 @@ button:disabled{opacity:.65;cursor:wait}.connection-badge.error{color:var(--bad)
     font-size:10px!important;
   }
 }
+
+
+/* v2.9 GPS-only location toggle and clearer vehicle details */
+.crew-members-line{
+  margin:8px 0 0;
+  color:var(--ink);
+  font-size:13px;
+  line-height:1.4;
+}
+.vehicle-sheet-heading{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:14px;
+}
+.vehicle-sheet-icon{
+  display:grid;
+  place-items:center;
+  width:54px;
+  height:54px;
+  border-radius:16px;
+  background:#eef3f7;
+  font-size:29px;
+}
+.vehicle-sheet-heading small{
+  display:block;
+  margin-bottom:2px;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.vehicle-sheet-heading h2{
+  margin:0;
+}
+.vehicle-live-line{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin:3px 0 12px;
+  padding:10px 12px;
+  border-radius:13px;
+  background:#eef8f2;
+  color:#0c6b3b;
+}
+.vehicle-live-line.delayed{
+  background:#fff7e4;
+  color:#8a5b00;
+}
+.vehicle-live-line.stale{
+  background:#fff0df;
+  color:#9a4e00;
+}
+.vehicle-live-line.offline{
+  background:#fff0f0;
+  color:#a11b1b;
+}
+.vehicle-live-dot{
+  width:10px;
+  height:10px;
+  flex:0 0 auto;
+  border-radius:50%;
+  background:currentColor;
+  box-shadow:0 0 0 4px color-mix(in srgb,currentColor 16%,transparent);
+}
+.vehicle-info-card,
+.vehicle-crew-block{
+  margin-top:10px;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#fff;
+}
+.vehicle-info-card span,
+.vehicle-crew-block span{
+  display:block;
+  margin-bottom:4px;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+}
+.vehicle-info-card strong,
+.vehicle-crew-block strong{
+  display:block;
+  color:var(--ink);
+  line-height:1.45;
+}

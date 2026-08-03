@@ -57,7 +57,7 @@
     if (event.target === helpModal) closeModal(helpModal);
   });
 
-  // One simple operation button:
+  // One simple vehicle button:
   // OFF -> opens declaration form
   // ON  -> opens the active crew panel, where sharing can be stopped.
   operationToggle?.addEventListener("click", () => {
