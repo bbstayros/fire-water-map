@@ -111,3 +111,83 @@ button:disabled{opacity:.65;cursor:wait}.connection-badge.error{color:var(--bad)
 @media(min-width:701px){
   .mobile-filter-dock{bottom:18px}
 }
+
+
+/* v2.7 clean responsive interface */
+.app-header{height:70px;padding:8px 16px}
+.app-header .brand{gap:10px}
+.app-header .brand-logo{width:48px;height:48px}
+.app-header .brand-copy strong{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app-header .header-actions{display:flex;align-items:center;gap:8px}
+.header-menu-button{font-size:23px;font-weight:900}
+.desktop-admin-only{display:grid}
+.main-toolbar{top:14px;left:14px;width:min(760px,calc(100% - 28px));padding:8px;display:grid;grid-template-columns:minmax(220px,1fr) auto auto;gap:8px;border-radius:18px}
+.toolbar-search{height:48px}
+.toolbar-toggle{min-width:158px;height:48px;border:1px solid var(--line);border-radius:13px;background:#fff;padding:6px 11px;display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:800;cursor:pointer}
+.toolbar-toggle .toggle-icon{font-size:19px}
+.toggle-copy{display:grid;gap:2px;text-align:left;line-height:1.05}
+.toggle-copy strong{font-size:13px}
+.toggle-copy small{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:10px}
+.state-dot{width:8px;height:8px;border-radius:50%;background:#9aa4ad;box-shadow:0 0 0 3px rgba(154,164,173,.15)}
+.toolbar-toggle.is-on{border-color:#b8dbc7;background:#eef8f2;color:#0c6b3b}
+.toolbar-toggle.is-on .state-dot{background:var(--ok);box-shadow:0 0 0 3px rgba(22,131,75,.15)}
+.toolbar-toggle.is-on .state-label{color:var(--ok)}
+.resource-dock{position:absolute;z-index:900;left:50%;bottom:14px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:min(720px,calc(100% - 28px));transform:translateX(-50%);padding:6px;border:1px solid rgba(218,224,230,.95);border-radius:19px;background:rgba(255,255,255,.95);box-shadow:0 10px 28px rgba(15,23,42,.18);backdrop-filter:blur(12px)}
+.dock-crew{position:relative;display:flex;align-items:center;justify-content:center;gap:7px;min-height:48px;padding:7px 9px;border:0;border-radius:14px;background:transparent;color:var(--ink);font-size:12px;font-weight:800;cursor:pointer}
+.dock-crew>span:first-child{font-size:22px}
+.dock-crew.has-live-crews,.dock-crew.is-sharing{background:#eef8f2;color:var(--ok)}
+.dock-count,.menu-badge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--brand);color:#fff;font-size:11px}
+.menu-sheet-card,.crew-hub-card,.help-sheet-card{width:min(510px,100%)}
+.menu-action-list{display:grid;gap:9px}
+.menu-action{position:relative;display:grid;grid-template-columns:44px 1fr;gap:11px;width:100%;padding:12px;border:1px solid var(--line);border-radius:15px;background:#fff;text-align:left;cursor:pointer}
+.menu-action>span:first-child{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:#f3f6f8;font-size:23px}
+.menu-action>div{display:grid;align-content:center;gap:3px}
+.menu-action strong{font-size:14px;color:var(--ink)}
+.menu-action small{color:var(--muted);font-size:11px;line-height:1.35}
+.menu-action .menu-badge{position:absolute;right:12px;top:12px}
+.help-info-list{display:grid;gap:9px}
+.help-info-list article{padding:12px;border:1px solid var(--line);border-radius:14px;background:#f8fafb}
+.help-info-list strong{font-size:13px}
+.help-info-list p{margin:5px 0 0;color:var(--muted);font-size:12px;line-height:1.45}
+.help-online{color:var(--ok);font-weight:800}.help-offline{color:var(--bad);font-weight:800}
+.connection-badge{display:none!important}
+.offline-status{position:absolute!important;z-index:720!important;top:auto!important;right:14px!important;bottom:82px!important;width:auto!important;height:auto!important;min-width:0!important;max-width:none!important;padding:7px 10px!important;border:1px solid var(--line)!important;border-radius:999px!important;background:rgba(255,255,255,.95)!important;box-shadow:0 4px 16px rgba(0,0,0,.1)!important;font-size:11px!important;font-weight:800!important;white-space:nowrap!important}
+.offline-status.online{color:var(--ok)!important}.offline-status.offline{color:var(--bad)!important}
+.map-counter{bottom:82px!important}
+.map-stage .leaflet-bottom.leaflet-right{bottom:76px!important}
+.bottom-sheet:not(.open){pointer-events:none}
+.legacy-action-hooks{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important}
+
+@media(max-width:700px){
+  .app-header{height:64px;padding:6px 10px}
+  .app-header .brand-logo{width:45px;height:45px}
+  .app-header .brand-copy strong{max-width:calc(100vw - 135px);font-size:14px}
+  .header-menu-button{width:44px;height:44px;border-radius:13px}
+  .desktop-admin-only{display:none!important}
+  .main-toolbar{top:10px;left:8px;width:calc(100% - 16px);padding:7px;grid-template-columns:minmax(0,1fr) 94px 99px;gap:5px;border-radius:16px}
+  .toolbar-search{height:45px;padding:0 8px;gap:6px}
+  .toolbar-search>span{font-size:15px}
+  .toolbar-search input{font-size:13px}
+  .toolbar-search .clear-search{font-size:20px;padding:0}
+  .toolbar-toggle{min-width:0;width:100%;height:45px;padding:4px 6px;gap:4px;justify-content:center}
+  .toolbar-toggle .toggle-icon{font-size:15px}
+  .toggle-copy strong{font-size:10px;white-space:nowrap}
+  .toggle-copy small{font-size:9px;justify-content:center}
+  .state-dot{width:7px;height:7px}
+  .resource-dock{position:fixed;bottom:calc(7px + env(safe-area-inset-bottom));width:calc(100% - 14px);padding:4px;gap:2px;border-radius:17px}
+  .dock-filter,.dock-crew{min-height:48px;padding:4px 2px;gap:3px;flex-direction:column;font-size:9px;line-height:1}
+  .dock-filter img{width:20px;height:27px}
+  .dock-crew>span:first-child{font-size:20px}
+  .dock-count{position:absolute;right:5px;top:4px;min-width:18px;height:18px;font-size:10px}
+  .offline-status{right:8px!important;bottom:68px!important;padding:6px 9px!important;font-size:10px!important}
+  .map-counter{left:8px!important;bottom:68px!important;padding:6px 9px!important;font-size:10px!important}
+  .map-stage .leaflet-bottom.leaflet-right{bottom:63px!important}
+  .compact-sheet-card{align-self:end;width:100%;max-height:88vh;padding:19px 15px calc(17px + env(safe-area-inset-bottom));border-radius:23px 23px 0 0}
+  .operation-mode .main-toolbar{display:grid!important}
+  .operation-mode .resource-dock{display:grid!important}
+  .operation-mode .offline-status{bottom:68px!important}
+}
+
+@media(min-width:701px){
+  .install-menu-action{display:none!important}
+}
