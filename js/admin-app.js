@@ -28,7 +28,8 @@
     marker: null,
     editingId: null,
     user: null,
-    profile: null
+    profile: null,
+    selectedPointIds: new Set()
   };
 
   const loginView = document.getElementById("loginView");
@@ -122,6 +123,7 @@
   async function loadPoints() {
     try {
       state.points = await dataService.allPoints();
+      state.selectedPointIds.clear();
       renderAll();
     } catch (error) {
       console.error(error);
@@ -216,52 +218,128 @@
     const body = document.getElementById("pointsTableBody");
     const rows = filteredPoints();
 
+    state.selectedPointIds = new Set(
+      [...state.selectedPointIds].filter((id) =>
+        state.points.some((point) => point.id === id)
+      )
+    );
+
     body.innerHTML = rows.length
-      ? rows
-          .map(
-            (point) => `
-              <tr>
-                <td>
-                  <strong>${escapeHtml(point.name)}</strong>
-                  <small>${point.latitude.toFixed(5)}, ${point.longitude.toFixed(5)}</small>
-                </td>
-                <td>${labels[point.category]}</td>
-                <td><span class="table-status ${point.condition}">${conditions[point.condition]}</span></td>
-                <td><span class="publication-status ${point.publication_status}">${publications[point.publication_status]}</span></td>
-                <td class="row-actions">
-                  <button type="button" data-edit="${point.id}" title="Επεξεργασία" aria-label="Επεξεργασία">✏️</button>
-                  ${
-                    state.profile?.role === "admin"
-                      ? `<button type="button" data-delete="${point.id}" title="Διαγραφή" aria-label="Διαγραφή">🗑️</button>`
-                      : ""
-                  }
-                </td>
-              </tr>
-            `
-          )
-          .join("")
-      : '<tr><td colspan="5" class="empty-table">Δεν βρέθηκαν σημεία.</td></tr>';
+      ? rows.map((point) => `
+          <tr class="${state.selectedPointIds.has(point.id) ? "selected-row" : ""}">
+            <td class="selection-column">
+              <input class="row-checkbox" type="checkbox" data-select-point="${point.id}"
+                aria-label="Επιλογή ${escapeHtml(point.name)}"
+                ${state.selectedPointIds.has(point.id) ? "checked" : ""}>
+            </td>
+            <td>
+              <strong>${escapeHtml(point.name)}</strong>
+              <small>${point.latitude.toFixed(5)}, ${point.longitude.toFixed(5)}</small>
+            </td>
+            <td>${labels[point.category]}</td>
+            <td><span class="table-status ${point.condition}">${conditions[point.condition]}</span></td>
+            <td><span class="publication-status ${point.publication_status}">${publications[point.publication_status]}</span></td>
+            <td class="row-actions">
+              <button type="button" data-edit="${point.id}" title="Επεξεργασία" aria-label="Επεξεργασία">✏️</button>
+              ${state.profile?.role === "admin"
+                ? `<button type="button" data-delete="${point.id}" title="Διαγραφή" aria-label="Διαγραφή">🗑️</button>`
+                : ""}
+            </td>
+          </tr>`).join("")
+      : '<tr><td colspan="6" class="empty-table">Δεν βρέθηκαν σημεία.</td></tr>';
 
     body.querySelectorAll("[data-edit]").forEach((button) => {
       button.addEventListener("click", () => editPoint(button.dataset.edit));
     });
-
     body.querySelectorAll("[data-delete]").forEach((button) => {
       button.addEventListener("click", () => removePoint(button.dataset.delete));
     });
+    body.querySelectorAll("[data-select-point]").forEach((checkbox) => {
+      checkbox.addEventListener("change", () => {
+        const id = checkbox.dataset.selectPoint;
+        checkbox.checked ? state.selectedPointIds.add(id) : state.selectedPointIds.delete(id);
+        renderTable();
+      });
+    });
+
+    const selectedVisible = rows.filter((point) => state.selectedPointIds.has(point.id)).length;
+    const selectAll = document.getElementById("selectAllPoints");
+    selectAll.checked = rows.length > 0 && selectedVisible === rows.length;
+    selectAll.indeterminate = selectedVisible > 0 && selectedVisible < rows.length;
+    selectAll.disabled = rows.length === 0 || state.profile?.role !== "admin";
+    updateBulkActionsBar();
   }
+
+  function updateBulkActionsBar() {
+    const count = state.selectedPointIds.size;
+    document.getElementById("selectedPointsCount").textContent = count;
+    document.getElementById("bulkActionsBar").classList.toggle("hidden", count === 0);
+    document.getElementById("bulkDeletePoints").disabled =
+      count === 0 || state.profile?.role !== "admin";
+  }
+
+  document.getElementById("selectAllPoints").addEventListener("change", (event) => {
+    if (state.profile?.role !== "admin") return;
+    filteredPoints().forEach((point) => {
+      event.target.checked
+        ? state.selectedPointIds.add(point.id)
+        : state.selectedPointIds.delete(point.id);
+    });
+    renderTable();
+  });
+
+  document.getElementById("bulkDeletePoints").addEventListener("click", async () => {
+    if (state.profile?.role !== "admin") {
+      alert("Μόνο ο διαχειριστής μπορεί να διαγράψει σημεία.");
+      return;
+    }
+
+    const ids = [...state.selectedPointIds];
+    if (!ids.length) return;
+
+    const names = ids
+      .map((id) => state.points.find((point) => point.id === id)?.name)
+      .filter(Boolean);
+    const preview = names.slice(0, 5).map((name) => `• ${name}`).join("\n");
+    const more = names.length > 5 ? `\n• και ακόμη ${names.length - 5} σημεία` : "";
+
+    const confirmed = window.confirm(
+      `ΠΡΟΣΟΧΗ: Πρόκειται να διαγραφούν οριστικά ${ids.length} σημεία.\n\n` +
+      `${preview}${more}\n\nΗ ενέργεια δεν μπορεί να αναιρεθεί.\n\nΝα συνεχίσω;`
+    );
+    if (!confirmed) return;
+
+    const button = document.getElementById("bulkDeletePoints");
+    button.disabled = true;
+    button.textContent = "Διαγραφή…";
+
+    try {
+      const results = await Promise.allSettled(ids.map((id) => dataService.deletePoint(id)));
+      const failures = results.filter((result) => result.status === "rejected");
+      await loadPoints();
+      if (failures.length) {
+        alert(`Διαγράφηκαν ${ids.length - failures.length} σημεία, αλλά απέτυχε η διαγραφή ${failures.length}.`);
+      }
+    } catch (error) {
+      console.error(error);
+      alert(error.message || "Η μαζική διαγραφή απέτυχε.");
+    } finally {
+      button.textContent = "🗑️ Διαγραφή επιλεγμένων";
+      updateBulkActionsBar();
+    }
+  });
 
   document.getElementById("adminSearch").addEventListener("input", renderTable);
   document.getElementById("adminCategory").addEventListener("change", renderTable);
   document.getElementById("adminPublication").addEventListener("change", renderTable);
 
   const viewMeta = {
-    overview: ["Επισκόπηση", "Συνολική εικόνα των σημείων νερού"],
+    overview: ["Επισκόπηση", "Συνολική εικόνα των σημείων και οχημάτων"],
     points: ["Σημεία", "Αναζήτηση, επεξεργασία και δημοσίευση"],
     editor: ["Νέο σημείο", "Καταχώρηση ή επεξεργασία επιβεβαιωμένων στοιχείων"],
-    submissions: ["Υποβολές", "Έλεγχος καταχωρήσεων που έγιναν από κινητό"],
-    codes: ["Κωδικοί επαλήθευσης", "Διαχείριση πρόσβασης για δημόσιες καταχωρήσεις"],
-    operations: ["Live επιχειρήσεις", "Ενεργά οχήματα, πληρώματα και τελευταία στίγματα"]
+    submissions: ["Υπό έγκριση", "Έλεγχος και έγκριση καταχωρήσεων που έγιναν από κινητό"],
+    codes: ["Κωδικοί καταχώρησης", "Διαχείριση κωδικών για δημόσιες καταχωρήσεις"],
+    operations: ["Επιχειρήσεις", "Ενεργά οχήματα, πληρώματα και τελευταία στίγματα"]
   };
 
   function setView(name) {

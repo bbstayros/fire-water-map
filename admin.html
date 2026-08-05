@@ -31,20 +31,23 @@
   <div id="dashboardView" class="dashboard hidden">
     <div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
     <aside id="adminSidebar" class="sidebar">
-      <div class="sidebar-top">
-      <a class="sidebar-brand" href="index.html">
-        <img src="icons/logo.svg" alt="">
-        <span><strong>Fire Water Map</strong><small>Διαχείριση</small></span>
-      </a>
-      <button id="collapseSidebar" class="sidebar-collapse" type="button" title="Σύμπτυξη μενού" aria-label="Σύμπτυξη μενού">‹</button>
+      <div class="sidebar-top sidebar-identity">
+        <a class="sidebar-brand" href="index.html" aria-label="Δημόσιος χάρτης">
+          <img src="icons/logo.svg" alt="Λογότυπο Συλλόγου">
+          <span>
+            <strong>Σύλλογος Εθελοντών Πυροπροστασίας Δασών Λουτρακίου - Περαχώρας</strong>
+            <small>Διαχείριση</small>
+          </span>
+        </a>
+        <button id="collapseSidebar" class="sidebar-collapse" type="button" title="Σύμπτυξη μενού" aria-label="Σύμπτυξη μενού">‹</button>
       </div>
       <nav>
-        <button class="nav-item active" data-view="overview" type="button">📊 <span>Επισκόπηση</span></button>
-        <button class="nav-item" data-view="points" type="button">📍 <span>Σημεία</span></button>
-        <button class="nav-item" data-view="editor" type="button">➕ <span>Νέο σημείο</span></button>
-        <button class="nav-item" data-view="submissions" type="button">📥 <span>Υποβολές</span><b id="pendingSubmissionBadge" class="nav-badge hidden">0</b></button>
-        <button class="nav-item admin-only" data-view="codes" type="button">🔑 <span>Κωδικοί</span></button>
-        <button class="nav-item admin-only" data-view="operations" type="button">🚒 <span>Live επιχειρήσεις</span></button>
+        <button class="nav-item active" data-view="overview" type="button"><span class="nav-icon">▦</span><span>Επισκόπηση</span></button>
+        <button class="nav-item" data-view="points" type="button"><span class="nav-icon map-pin-icon" aria-hidden="true"></span><span>Σημεία</span></button>
+        <button class="nav-item" data-view="editor" type="button"><span class="nav-icon">＋</span><span>Νέο σημείο</span></button>
+        <button class="nav-item" data-view="submissions" type="button"><span class="nav-icon">⌛</span><span>Υπό έγκριση</span><b id="pendingSubmissionBadge" class="nav-badge hidden">0</b></button>
+        <button class="nav-item admin-only" data-view="codes" type="button"><span class="nav-icon">🔑</span><span>Κωδικοί καταχώρησης</span></button>
+        <button class="nav-item admin-only" data-view="operations" type="button"><span class="nav-icon">🚒</span><span>Επιχειρήσεις</span></button>
       </nav>
       <div class="sidebar-user">
         <strong id="signedInUser"></strong>
@@ -60,7 +63,7 @@
       <header class="dashboard-header">
         <div>
           <h1 id="viewTitle">Επισκόπηση</h1>
-          <p id="viewSubtitle">Συνολική εικόνα των σημείων νερού</p>
+          <p id="viewSubtitle">Συνολική εικόνα των σημείων και οχημάτων</p>
         </div>
         <div class="dashboard-header-actions">
           <a class="header-public-link" href="index.html">🗺️ Δημόσιος χάρτης</a>
@@ -70,10 +73,22 @@
 
       <section id="overviewView" class="dashboard-section">
         <div class="stats-grid">
-          <article class="stat-card total"><i>📍</i><div><span>Σύνολο σημείων</span><strong id="statTotal">0</strong></div></article>
-          <article class="stat-card hydrants"><i>🚰</i><div><span>Κρουνοί</span><strong id="statHydrants">0</strong></div></article>
-          <article class="stat-card tanks"><i>🛢️</i><div><span>Δεξαμενές</span><strong id="statTanks">0</strong></div></article>
-          <article class="stat-card sources"><i>💧</i><div><span>Υδροληψίες</span><strong id="statSources">0</strong></div></article>
+          <article class="stat-card total">
+            <i class="stat-total-pin map-pin-icon" aria-hidden="true"></i>
+            <div><span>Σύνολο σημείων</span><strong id="statTotal">0</strong></div>
+          </article>
+          <article class="stat-card hydrants">
+            <i><img src="icons/hydrant.svg" alt=""></i>
+            <div><span>Κρουνοί</span><strong id="statHydrants">0</strong></div>
+          </article>
+          <article class="stat-card tanks">
+            <i><img src="icons/tank.svg" alt=""></i>
+            <div><span>Δεξαμενές</span><strong id="statTanks">0</strong></div>
+          </article>
+          <article class="stat-card sources">
+            <i><img src="icons/water-source.svg" alt=""></i>
+            <div><span>Υδροληψίες</span><strong id="statSources">0</strong></div>
+          </article>
         </div>
         <div class="dashboard-grid">
           <article class="panel">
@@ -108,10 +123,20 @@
               <option value="hidden">Κρυφά</option>
             </select>
           </div>
+          <div id="bulkActionsBar" class="bulk-actions-bar hidden" aria-live="polite">
+            <div>
+              <strong><span id="selectedPointsCount">0</span> επιλεγμένα σημεία</strong>
+              <small>Η διαγραφή είναι οριστική και δεν μπορεί να αναιρεθεί.</small>
+            </div>
+            <button id="bulkDeletePoints" class="action-button danger-button" type="button">🗑️ Διαγραφή επιλεγμένων</button>
+          </div>
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Ονομασία</th><th>Κατηγορία</th><th>Κατάσταση</th><th>Δημοσίευση</th><th></th></tr>
+                <tr>
+                  <th class="selection-column"><input id="selectAllPoints" class="row-checkbox" type="checkbox" aria-label="Επιλογή όλων των ορατών σημείων"></th>
+                  <th>Ονομασία</th><th>Κατηγορία</th><th>Κατάσταση</th><th>Δημοσίευση</th><th></th>
+                </tr>
               </thead>
               <tbody id="pointsTableBody"></tbody>
             </table>

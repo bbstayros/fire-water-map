@@ -370,3 +370,61 @@ button:disabled{opacity:.65;cursor:wait}.connection-badge.error{color:var(--bad)
 .dashboard.sidebar-collapsed{grid-template-columns:74px minmax(0,1fr)}.sidebar-collapsed .sidebar{width:74px}.sidebar-collapsed .sidebar-brand span,.sidebar-collapsed .nav-item span,.sidebar-collapsed .nav-badge,.sidebar-collapsed .sidebar-user,.sidebar-collapsed .sidebar-bottom .nav-item span{display:none}.sidebar-collapsed .sidebar-brand{justify-content:center;padding-left:0;padding-right:0}.sidebar-collapsed .sidebar-collapse{position:absolute;top:67px;right:-13px;background:#fff;color:#17202a;box-shadow:0 4px 12px rgba(0,0,0,.15)}.sidebar-collapsed .nav-item{justify-content:center;font-size:17px}.sidebar-collapsed .sidebar-bottom .nav-item{justify-content:center}
 @media(max-width:1100px){.stats-grid{grid-template-columns:1fr 1fr}.codes-grid{grid-template-columns:1fr}.editor-layout{grid-template-columns:1fr}.dashboard-grid{grid-template-columns:1fr}}
 @media(max-width:760px){.dashboard,.dashboard.sidebar-collapsed{display:block}.sidebar,.sidebar-collapsed .sidebar{position:fixed;top:0;bottom:0;left:0;width:min(300px,88vw);height:100vh;transform:translateX(-105%);padding:14px 12px}.sidebar.mobile-open{transform:translateX(0);display:flex;flex-direction:column}.sidebar .sidebar-brand span,.sidebar .nav-item span,.sidebar .nav-badge,.sidebar .sidebar-user,.sidebar .sidebar-bottom .nav-item span{display:initial}.sidebar .nav-item{justify-content:flex-start;font-size:13px}.sidebar-collapse{display:none}.sidebar nav{display:grid}.sidebar-bottom{display:grid}.dashboard-main{padding:0 12px 24px}.dashboard-header{margin:0 -12px 14px;padding:13px 12px}.dashboard-header h1{font-size:21px}.dashboard-header p{max-width:260px;font-size:11px}.header-public-link{display:none}#mobileMenu{display:grid}.stats-grid{gap:8px}.stat-card{min-height:86px;padding:11px}.stat-card i{width:36px;height:36px}.stat-card strong{font-size:24px}.panel{padding:13px}.table-wrap{overflow-x:auto}.codes-grid{display:grid}.code-card{grid-template-columns:1fr}.compact-danger{justify-self:start}.admin-vehicle-card{grid-template-columns:38px 1fr}.vehicle-map-button{grid-column:2;justify-self:start}.operation-room-card-head{align-items:flex-start}.operation-count{display:none}#adminMap{height:420px}.admin-menu-open{overflow:hidden}}
+
+
+/* v3.1 sidebar identity, coloured statistics and bulk point actions */
+.dashboard{grid-template-columns:280px minmax(0,1fr)}
+.sidebar{width:280px}
+.sidebar-identity{position:relative;display:block;min-height:220px;padding:8px 4px 18px}
+.sidebar-identity .sidebar-brand{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;width:100%;padding:4px 8px 18px;text-align:center}
+.sidebar-identity .sidebar-brand img{width:86px;height:86px;object-fit:contain}
+.sidebar-identity .sidebar-brand span{display:flex;flex-direction:column;align-items:center;gap:8px}
+.sidebar-identity .sidebar-brand strong{max-width:238px;font-size:14px;line-height:1.35;color:#fff}
+.sidebar-identity .sidebar-brand small{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#9facb5}
+.sidebar-identity .sidebar-collapse{position:absolute;top:0;right:0}
+.nav-icon{display:inline-grid;place-items:center;width:24px;min-width:24px;height:24px;font-size:18px;font-style:normal}
+.map-pin-icon{position:relative;display:inline-block;width:17px;height:22px;border-radius:50% 50% 50% 0;background:currentColor;transform:rotate(-45deg)}
+.map-pin-icon::after{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;background:#fff;transform:translate(-50%,-50%)}
+.nav-item .map-pin-icon{color:#dbe2e6}.nav-item.active .map-pin-icon{color:#a51f18}
+.sidebar-collapsed{grid-template-columns:78px minmax(0,1fr)}
+.sidebar-collapsed .sidebar{width:78px}
+.sidebar-collapsed .sidebar-identity{min-height:72px}
+.sidebar-collapsed .sidebar-identity .sidebar-brand{padding:2px}
+.sidebar-collapsed .sidebar-identity .sidebar-brand img{width:44px;height:44px}
+.sidebar-collapsed .sidebar-identity .sidebar-brand span{display:none}
+
+.stat-card i img{display:block;width:34px;height:42px}
+.stat-card.total{border-top:4px solid #253440}
+.stat-card.hydrants{border-top:4px solid #c72828;background:linear-gradient(145deg,#fff 45%,#fff1f1)}
+.stat-card.hydrants i{background:#fde7e7}.stat-card.hydrants span,.stat-card.hydrants strong{color:#b82020}
+.stat-card.tanks{border-top:4px solid #176dc1;background:linear-gradient(145deg,#fff 45%,#eef6ff)}
+.stat-card.tanks i{background:#e4f0ff}.stat-card.tanks span,.stat-card.tanks strong{color:#1765ae}
+.stat-card.sources{border-top:4px solid #05937d;background:linear-gradient(145deg,#fff 45%,#eafaf6)}
+.stat-card.sources i{background:#dff7f1}.stat-card.sources span,.stat-card.sources strong{color:#05806d}
+.stat-total-pin{color:#253440;transform:rotate(-45deg) scale(.95)}
+
+.selection-column{width:44px;padding-right:2px!important;text-align:center}
+.row-checkbox{width:18px;height:18px;accent-color:#9d1b16;cursor:pointer}
+.selected-row{background:#fff7f6}
+.bulk-actions-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 12px;padding:12px 14px;border:1px solid #efb9b5;border-radius:14px;background:#fff4f3}
+.bulk-actions-bar div{display:flex;flex-direction:column;gap:3px}
+.bulk-actions-bar strong{color:#8f1914}.bulk-actions-bar small{color:#7d5552}
+.danger-button{border-color:#d93c33!important;background:#b92018!important;color:#fff!important}
+
+@media(max-width:900px){
+  .dashboard{grid-template-columns:90px minmax(0,1fr)}
+  .sidebar{width:90px}
+  .sidebar-identity{min-height:82px}
+  .sidebar-identity .sidebar-brand{padding:2px}
+  .sidebar-identity .sidebar-brand img{width:50px;height:50px}
+  .sidebar-identity .sidebar-brand span{display:none}
+}
+@media(max-width:650px){
+  .sidebar{width:auto}
+  .sidebar.mobile-open .sidebar-identity{min-height:190px}
+  .sidebar.mobile-open .sidebar-identity .sidebar-brand{display:flex}
+  .sidebar.mobile-open .sidebar-identity .sidebar-brand img{width:74px;height:74px}
+  .sidebar.mobile-open .sidebar-identity .sidebar-brand span{display:flex}
+  .bulk-actions-bar{align-items:stretch;flex-direction:column}
+  .bulk-actions-bar button{width:100%}
+}
