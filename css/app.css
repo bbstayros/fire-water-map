@@ -428,3 +428,19 @@ button:disabled{opacity:.65;cursor:wait}.connection-badge.error{color:var(--bad)
   .bulk-actions-bar{align-items:stretch;flex-direction:column}
   .bulk-actions-bar button{width:100%}
 }
+
+
+/* v3.2: four point filters */
+.table-tools{
+  grid-template-columns:minmax(210px,1.6fr) repeat(3,minmax(150px,1fr));
+}
+@media(max-width:1050px){
+  .table-tools{
+    grid-template-columns:1fr 1fr;
+  }
+}
+@media(max-width:650px){
+  .table-tools{
+    grid-template-columns:1fr;
+  }
+}

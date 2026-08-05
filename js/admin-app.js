@@ -203,13 +203,15 @@
       .toLocaleLowerCase("el");
     const category = document.getElementById("adminCategory").value;
     const publication = document.getElementById("adminPublication").value;
+    const condition = document.getElementById("adminCondition").value;
 
     return state.points.filter((point) => {
       const haystack = `${point.name} ${point.notes}`.toLocaleLowerCase("el");
       return (
         (!query || haystack.includes(query)) &&
         (!category || point.category === category) &&
-        (!publication || point.publication_status === publication)
+        (!publication || point.publication_status === publication) &&
+        (!condition || point.condition === condition)
       );
     });
   }
@@ -332,6 +334,7 @@
   document.getElementById("adminSearch").addEventListener("input", renderTable);
   document.getElementById("adminCategory").addEventListener("change", renderTable);
   document.getElementById("adminPublication").addEventListener("change", renderTable);
+  document.getElementById("adminCondition").addEventListener("change", renderTable);
 
   const viewMeta = {
     overview: ["Επισκόπηση", "Συνολική εικόνα των σημείων και οχημάτων"],
@@ -339,7 +342,7 @@
     editor: ["Νέο σημείο", "Καταχώρηση ή επεξεργασία επιβεβαιωμένων στοιχείων"],
     submissions: ["Υπό έγκριση", "Έλεγχος και έγκριση καταχωρήσεων που έγιναν από κινητό"],
     codes: ["Κωδικοί καταχώρησης", "Διαχείριση κωδικών για δημόσιες καταχωρήσεις"],
-    operations: ["Επιχειρήσεις", "Ενεργά οχήματα, πληρώματα και τελευταία στίγματα"]
+    operations: ["Οχήματα", "Ενεργά οχήματα, πληρώματα και τελευταία στίγματα"]
   };
 
   function setView(name) {

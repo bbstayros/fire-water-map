@@ -42,12 +42,12 @@
         <button id="collapseSidebar" class="sidebar-collapse" type="button" title="Σύμπτυξη μενού" aria-label="Σύμπτυξη μενού">‹</button>
       </div>
       <nav>
-        <button class="nav-item active" data-view="overview" type="button"><span class="nav-icon">▦</span><span>Επισκόπηση</span></button>
+        <button class="nav-item active" data-view="overview" type="button"><span>Επισκόπηση</span></button>
         <button class="nav-item" data-view="points" type="button"><span class="nav-icon map-pin-icon" aria-hidden="true"></span><span>Σημεία</span></button>
         <button class="nav-item" data-view="editor" type="button"><span class="nav-icon">＋</span><span>Νέο σημείο</span></button>
         <button class="nav-item" data-view="submissions" type="button"><span class="nav-icon">⌛</span><span>Υπό έγκριση</span><b id="pendingSubmissionBadge" class="nav-badge hidden">0</b></button>
-        <button class="nav-item admin-only" data-view="codes" type="button"><span class="nav-icon">🔑</span><span>Κωδικοί καταχώρησης</span></button>
-        <button class="nav-item admin-only" data-view="operations" type="button"><span class="nav-icon">🚒</span><span>Επιχειρήσεις</span></button>
+        <button class="nav-item admin-only" data-view="codes" type="button"><span>Κωδικοί καταχώρησης</span></button>
+        <button class="nav-item admin-only" data-view="operations" type="button"><span class="nav-icon">🚒</span><span>Οχήματα</span></button>
       </nav>
       <div class="sidebar-user">
         <strong id="signedInUser"></strong>
@@ -121,6 +121,12 @@
               <option value="pending">Εκκρεμή</option>
               <option value="published">Δημοσιευμένα</option>
               <option value="hidden">Κρυφά</option>
+            </select>
+            <select id="adminCondition">
+              <option value="">Όλες οι καταστάσεις</option>
+              <option value="available">Λειτουργικά</option>
+              <option value="unknown">Άγνωστη κατάσταση</option>
+              <option value="unavailable">Εκτός λειτουργίας</option>
             </select>
           </div>
           <div id="bulkActionsBar" class="bulk-actions-bar hidden" aria-live="polite">

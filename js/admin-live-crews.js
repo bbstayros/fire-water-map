@@ -77,7 +77,11 @@
               <div class="operation-count"><strong>${activeCrewCount}</strong><span>ενεργά</span></div>
             </div>
             ${vehicles}
-            ${room.is_active ? `<div class="operation-footer"><button class="action-button danger-button" type="button" data-close-room="${room.id}">Κλείσιμο επιχείρησης</button></div>` : ""}
+            <div class="operation-footer">
+              ${room.is_active
+                ? `<button class="action-button danger-button" type="button" data-close-room="${room.id}">Κλείσιμο</button>`
+                : `<button class="action-button primary" type="button" data-reopen-room="${room.id}">Επαναλειτουργία</button>`}
+            </div>
           </article>`;
         }).join("")
       : '<p class="empty-table">Δεν υπάρχουν live επιχειρήσεις.</p>';
@@ -87,6 +91,20 @@
         if (!confirm("Να κλείσει η επιχείρηση και να σταματήσουν όλα τα live στίγματα;")) return;
         const { error } = await ds.client.rpc("close_operation_room", { p_room_id: button.dataset.closeRoom });
         if (error) alert(error.message); else loadRooms();
+      });
+    });
+
+    list.querySelectorAll("[data-reopen-room]").forEach(button => {
+      button.addEventListener("click", async () => {
+        if (!confirm("Να ενεργοποιηθεί ξανά αυτή η επιχείρηση με τον ίδιο κωδικό;")) return;
+        const { error } = await ds.client.rpc("reopen_operation_room", {
+          p_room_id: button.dataset.reopenRoom
+        });
+        if (error) {
+          alert(error.message || "Η επαναλειτουργία απέτυχε.");
+        } else {
+          loadRooms();
+        }
       });
     });
   }

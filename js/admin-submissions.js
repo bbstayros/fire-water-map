@@ -4,6 +4,7 @@
   let profile = null;
   let submissions = [];
   let codes = [];
+  let codeFilter = "active";
   const labels = {hydrant:"Κρουνός",tank:"Δεξαμενή",water_source:"Υδροληψία"};
   const conditions = {available:"Λειτουργικό",unknown:"Άγνωστη",unavailable:"Εκτός λειτουργίας"};
   const esc = (v) => String(v ?? "").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
