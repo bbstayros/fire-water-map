@@ -15,6 +15,12 @@
     code: document.getElementById("crewOperationCode"),
     name: document.getElementById("crewVehicleName"),
     members: document.getElementById("crewMembers"),
+    memberSearch: document.getElementById("crewMemberSearch"),
+    manualMembers: document.getElementById("crewManualMembers"),
+    vehicleSuggestions: document.getElementById("vehicleSuggestions"),
+    memberSuggestions: document.getElementById("memberSuggestions"),
+    selectedMembers: document.getElementById("selectedCrewMembers"),
+    selectedVehicleMeta: document.getElementById("selectedVehicleMeta"),
     keepAwake: document.getElementById("crewKeepScreenOn"),
     startMessage: document.getElementById("crewStartMessage"),
     activePanel: document.getElementById("crewActivePanel"),
@@ -47,12 +53,21 @@
     sendTimer: null,
     wakeLock: null,
     markers: new Map(),
-    crews: []
+    crews: [],
+    directory: { vehicles: [], members: [] },
+    selectedVehicleId: null,
+    selectedMemberIds: [],
+    selectedMemberNames: []
   };
 
   ui.code.value = state.code;
   ui.name.value = state.vehicleName;
   if (ui.members) ui.members.value = state.crewMembers;
+  try {
+    const lastIds=JSON.parse(localStorage.getItem("fwm-last-member-ids")||"[]");
+    const lastNames=JSON.parse(localStorage.getItem("fwm-last-member-names")||"[]");
+    if(lastNames.length){document.getElementById("recentCrewChoice")?.classList.remove("hidden");document.getElementById("recentCrewLabel").textContent=lastNames.join(", ");document.getElementById("reuseRecentCrew").onclick=()=>{state.selectedMemberIds=[...lastIds];state.selectedMemberNames=[...lastNames];renderSelectedMembers();document.getElementById("recentCrewChoice").classList.add("hidden");};}
+  } catch {}
 
   function getDeviceId() {
     let value = localStorage.getItem("fwm-device-id");
@@ -198,23 +213,31 @@
     }
   }
 
+  async function loadDirectory() {
+    const code=ui.code.value.trim().toUpperCase();
+    if(code.length<4)return;
+    try{const rows=await rpc("list_operation_directory",{p_code:code});const result=Array.isArray(rows)?rows[0]:rows;state.directory={vehicles:result?.vehicles||[],members:result?.members||[]};renderVehicleSuggestions();renderMemberSuggestions();}catch(error){console.warn("Directory unavailable",error);}
+  }
+  function renderVehicleSuggestions(){if(!ui.vehicleSuggestions)return;const q=ui.name.value.trim().toLocaleLowerCase("el");const rows=state.directory.vehicles.filter(v=>!q||`${v.display_name} ${v.code} ${v.make||""} ${v.model||""}`.toLocaleLowerCase("el").includes(q)).slice(0,8);ui.vehicleSuggestions.innerHTML=rows.map(v=>`<button type="button" data-vehicle-id="${v.id}"><strong>${escapeHtml(v.display_name)}</strong><small>${escapeHtml([v.make,v.model,v.water_capacity_l?`${v.water_capacity_l} L`:""].filter(Boolean).join(" · "))}</small></button>`).join("");ui.vehicleSuggestions.classList.toggle("hidden",!rows.length);ui.vehicleSuggestions.querySelectorAll("[data-vehicle-id]").forEach(b=>b.onclick=()=>{const v=state.directory.vehicles.find(x=>x.id===b.dataset.vehicleId);state.selectedVehicleId=v.id;ui.name.value=v.display_name;ui.selectedVehicleMeta.textContent=[v.make,v.model,v.water_capacity_l?`${v.water_capacity_l} L`:""].filter(Boolean).join(" · ")||"Καταχωρημένο όχημα";ui.vehicleSuggestions.classList.add("hidden");localStorage.setItem("fwm-last-vehicle-id",v.id);});}
+  function renderMemberSuggestions(){if(!ui.memberSuggestions)return;const q=ui.memberSearch.value.trim().toLocaleLowerCase("el");const rows=state.directory.members.filter(m=>!state.selectedMemberIds.includes(m.id)&&(!q||`${m.full_name} ${m.callsign||""}`.toLocaleLowerCase("el").includes(q))).slice(0,8);ui.memberSuggestions.innerHTML=rows.map(m=>`<button type="button" data-member-id="${m.id}"><strong>${escapeHtml(m.callsign||m.full_name)}</strong><small>${escapeHtml(m.full_name)}</small></button>`).join("");ui.memberSuggestions.classList.toggle("hidden",!rows.length);ui.memberSuggestions.querySelectorAll("[data-member-id]").forEach(b=>b.onclick=()=>{const m=state.directory.members.find(x=>x.id===b.dataset.memberId);state.selectedMemberIds.push(m.id);state.selectedMemberNames.push(m.callsign||m.full_name);ui.memberSearch.value="";ui.memberSuggestions.classList.add("hidden");renderSelectedMembers();});}
+  function renderSelectedMembers(){ui.selectedMembers.innerHTML=state.selectedMemberNames.map((name,i)=>`<span>${escapeHtml(name)}<button type="button" data-remove-member="${i}">×</button></span>`).join("");ui.selectedMembers.querySelectorAll("[data-remove-member]").forEach(b=>b.onclick=()=>{const i=Number(b.dataset.removeMember);state.selectedMemberIds.splice(i,1);state.selectedMemberNames.splice(i,1);renderSelectedMembers();});ui.members.value=state.selectedMemberNames.join(", ");}
+  ui.code?.addEventListener("change",loadDirectory);ui.code?.addEventListener("blur",loadDirectory);ui.name?.addEventListener("input",()=>{state.selectedVehicleId=null;renderVehicleSuggestions();});ui.name?.addEventListener("focus",()=>{loadDirectory();renderVehicleSuggestions();});ui.memberSearch?.addEventListener("input",renderMemberSuggestions);ui.memberSearch?.addEventListener("focus",()=>{loadDirectory();renderMemberSuggestions();});
   async function startSharing(event) {
     event.preventDefault();
 
     const code = ui.code.value.trim().toUpperCase();
     const vehicleName = ui.name.value.trim();
-    const crewMembers = ui.members?.value.trim() || "";
-    const sharedName = crewMembers
-      ? `${vehicleName} · ${crewMembers}`
-      : vehicleName;
+    const manualMembers = ui.manualMembers?.value.trim() || "";
+    const allMemberNames=[...state.selectedMemberNames,...manualMembers.split(",").map(x=>x.trim()).filter(Boolean)];
+    const crewMembers = allMemberNames.join(", ");
+    const sharedName = crewMembers ? `${vehicleName} · ${crewMembers}` : vehicleName;
 
     message("Έλεγχος κωδικού και έναρξη…");
 
     try {
-      const rows = await rpc("join_crew", {
-        p_code: code,
-        p_vehicle_name: sharedName,
-        p_device_id: state.deviceId
+      const rows = await rpc("join_crew_v2", {
+        p_code: code, p_vehicle_id: state.selectedVehicleId, p_vehicle_name: vehicleName,
+        p_member_ids: state.selectedMemberIds, p_crew_members: crewMembers, p_device_id: state.deviceId
       });
 
       const result = Array.isArray(rows) ? rows[0] : rows;
@@ -231,6 +254,8 @@
       localStorage.setItem("fwm-operation-name", state.roomName);
       localStorage.setItem("fwm-crew-name", state.vehicleName);
       localStorage.setItem("fwm-crew-members", state.crewMembers);
+      localStorage.setItem("fwm-last-member-ids",JSON.stringify(state.selectedMemberIds));
+      localStorage.setItem("fwm-last-member-names",JSON.stringify(state.selectedMemberNames));
       localStorage.setItem("fwm-crew-session", state.sessionId);
 
       ui.activePanel.classList.remove("hidden");
@@ -341,7 +366,7 @@
     const parts = raw.split(" · ");
     return {
       vehicle: parts.shift() || "Όχημα",
-      members: parts.join(" · ").trim()
+      members: String(row?.crew_members_text || parts.join(" · ")).trim()
     };
   }
 
@@ -356,7 +381,7 @@
     if (!state.code || !navigator.onLine) return;
 
     try {
-      const rows = await rpc("list_operation_crews", { p_code: state.code });
+      let rows; try { rows = await rpc("list_operation_crews_v2", { p_code: state.code }); } catch { rows = await rpc("list_operation_crews", { p_code: state.code }); }
       state.crews = rows || [];
       renderCrewList();
       renderCrewMarkers();

@@ -44,16 +44,18 @@
       <nav>
         <button class="nav-item active" data-view="overview" type="button"><span>Επισκόπηση</span></button>
         <button class="nav-item" data-view="points" type="button"><span class="nav-icon map-pin-icon" aria-hidden="true"></span><span>Σημεία</span></button>
-        <button class="nav-item" data-view="editor" type="button"><span class="nav-icon">＋</span><span>Νέο σημείο</span></button>
-        <button class="nav-item" data-view="submissions" type="button"><span class="nav-icon">⌛</span><span>Υπό έγκριση</span><b id="pendingSubmissionBadge" class="nav-badge hidden">0</b></button>
+        <button class="nav-item editor-only" data-view="editor" type="button"><span class="nav-icon">＋</span><span>Νέο σημείο</span></button>
+        <button class="nav-item editor-only" data-view="submissions" type="button"><span class="nav-icon">⌛</span><span>Υπό έγκριση</span><b id="pendingSubmissionBadge" class="nav-badge hidden">0</b></button>
         <button class="nav-item admin-only" data-view="codes" type="button"><span>Κωδικοί καταχώρησης</span></button>
         <button class="nav-item admin-only" data-view="operations" type="button"><span class="nav-icon">🚒</span><span>Οχήματα</span></button>
+        <button class="nav-item admin-only" data-view="users" type="button"><span>Χρήστες</span></button>
       </nav>
       <div class="sidebar-user">
         <strong id="signedInUser"></strong>
         <small id="signedInRole"></small>
       </div>
       <div class="sidebar-bottom">
+        <button id="historyButton" class="nav-item admin-only" data-view="history" type="button"><span>Ιστορικό</span></button>
         <a class="nav-item link" href="index.html">🗺️ <span>Δημόσιος χάρτης</span></a>
         <button id="logoutButton" class="nav-item danger" type="button">↪ <span>Αποσύνδεση</span></button>
       </div>
@@ -89,6 +91,10 @@
             <i><img src="icons/water-source.svg" alt=""></i>
             <div><span>Υδροληψίες</span><strong id="statSources">0</strong></div>
           </article>
+          <article class="stat-card vehicles">
+            <i>🚒</i>
+            <div><span>Ενεργά οχήματα</span><strong id="statActiveVehicles">0</strong></div>
+          </article>
         </div>
         <div class="dashboard-grid">
           <article class="panel">
@@ -106,7 +112,7 @@
         <div class="panel">
           <div class="panel-heading responsive">
             <div><h2>Όλα τα σημεία</h2><p>Αναζήτηση, επεξεργασία και δημοσίευση</p></div>
-            <button id="newPointButton" class="action-button primary" type="button">＋ Νέο σημείο</button>
+            <button id="newPointButton" class="action-button primary editor-only" type="button">＋ Νέο σημείο</button>
           </div>
           <div class="table-tools">
             <input id="adminSearch" type="search" placeholder="Αναζήτηση…">
@@ -199,47 +205,114 @@
             <button class="action-button primary full" type="submit">Δημιουργία κωδικού</button>
             <div id="verificationCodeMessage" class="form-message" aria-live="polite"></div>
           </form>
-          <div class="panel codes-panel"><div class="panel-heading responsive"><div><h2>Κωδικοί επαλήθευσης</h2><p>Χρήσεις, λήξη και κατάσταση πρόσβασης.</p></div><button id="refreshCodesButton" class="action-button" type="button">↻ Ανανέωση</button></div><div class="admin-segmented" id="codeStatusTabs"><button class="active" data-code-filter="active" type="button">Ενεργοί</button><button data-code-filter="all" type="button">Όλοι</button><button data-code-filter="inactive" type="button">Ανενεργοί</button></div><div id="verificationCodesList" class="codes-list"></div></div>
+          <div class="panel codes-panel">
+            <div class="panel-heading responsive"><div><h2>Κωδικοί καταχώρησης</h2><p>Χρήσεις, λήξη και κατάσταση πρόσβασης.</p></div><button id="refreshCodesButton" class="action-button" type="button">↻ Ανανέωση</button></div>
+            <div id="newCodeReveal" class="new-code-reveal hidden"><div><small>Ο νέος κωδικός εμφανίζεται μόνο τώρα</small><strong id="newCodeValue"></strong></div><button id="copyNewCode" class="action-button primary" type="button">Αντιγραφή</button></div>
+            <input id="codeSearch" class="admin-wide-search" type="search" placeholder="Αναζήτηση περιγραφής ή τελευταίων χαρακτήρων…">
+            <div class="admin-segmented" id="codeStatusTabs"><button class="active" data-code-filter="active" type="button">Ενεργοί</button><button data-code-filter="all" type="button">Όλοι</button><button data-code-filter="inactive" type="button">Ανενεργοί</button></div><div id="verificationCodesList" class="codes-list"></div></div>
         </div>
       </section>
       <section id="operationsView" class="dashboard-section hidden">
-        <div class="dashboard-grid codes-grid">
-          <form id="operationRoomForm" class="panel point-form">
-            <div class="panel-heading">
-              <div>
-                <h2>Νέα live επιχείρηση</h2>
-                <p>Δώσε στα πληρώματα τον ίδιο κωδικό για να βλέπουν μόνο μεταξύ τους τα στίγματα.</p>
-              </div>
-            </div>
-            <label>Ονομασία επιχείρησης
-              <input id="operationRoomName" type="text" minlength="2" maxlength="100" required placeholder="π.χ. Περιπολία Γερανείων">
-            </label>
-            <label>Κωδικός επιχείρησης
-              <input id="operationRoomCode" type="text" minlength="4" maxlength="30" required autocapitalize="characters" autocomplete="off" placeholder="π.χ. ΓΕΡΑΝΕΙΑ26">
-            </label>
-            <label>Λήξη
-              <input id="operationRoomExpiry" type="datetime-local">
-            </label>
-            <button class="action-button primary full" type="submit">Δημιουργία επιχείρησης</button>
-            <div id="operationRoomMessage" class="form-message" aria-live="polite"></div>
-          </form>
+        <div class="admin-tabs" id="vehicleAdminTabs">
+          <button class="active" data-vehicle-tab="live" type="button">Live επιχειρήσεις</button>
+          <button data-vehicle-tab="registry" type="button">Μητρώο οχημάτων</button>
+          <button data-vehicle-tab="members" type="button">Μητρώο μελών</button>
+        </div>
 
-          <div class="panel">
-            <div class="panel-heading responsive">
-              <div>
-                <h2>Επιχειρήσεις και οχήματα</h2>
-                <p>Ζωντανή κατάσταση οχημάτων και τελευταία γνωστά στίγματα.</p>
-              </div>
-              <button id="refreshOperationRooms" class="action-button" type="button">↻ Ανανέωση</button>
+        <div id="vehicleLiveTab" class="vehicle-tab-panel">
+          <div class="dashboard-grid codes-grid">
+            <form id="operationRoomForm" class="panel point-form">
+              <div class="panel-heading"><div><h2>Νέα live επιχείρηση</h2><p>Ο κωδικός συνδέει τα οχήματα στην ίδια επιχειρησιακή προβολή.</p></div></div>
+              <label>Ονομασία επιχείρησης<input id="operationRoomName" type="text" minlength="2" maxlength="100" required placeholder="π.χ. Περιπολία Γερανείων"></label>
+              <label>Κωδικός επιχείρησης<input id="operationRoomCode" type="text" minlength="4" maxlength="30" required autocapitalize="characters" autocomplete="off" placeholder="π.χ. ΓΕΡΑΝΕΙΑ26"></label>
+              <label>Λήξη<input id="operationRoomExpiry" type="datetime-local"></label>
+              <button class="action-button primary full" type="submit">Δημιουργία επιχείρησης</button>
+              <div id="operationRoomMessage" class="form-message" aria-live="polite"></div>
+            </form>
+            <div class="panel">
+              <div class="panel-heading responsive"><div><h2>Live επιχειρήσεις</h2><p>Η «Ενεργή» επιχείρηση μπορεί να έχει 0 οχήματα που μεταδίδουν αυτή τη στιγμή.</p></div><button id="refreshOperationRooms" class="action-button" type="button">↻ Ανανέωση</button></div>
+              <div class="operation-legend"><span><i class="legend-room"></i> Ανοιχτή επιχείρηση</span><span><i class="legend-live"></i> Όχημα με πρόσφατο GPS</span></div>
+              <div id="operationRoomsList" class="codes-list"></div>
             </div>
-            <div id="operationRoomsList" class="codes-list"></div>
+          </div>
+        </div>
+
+        <div id="vehicleRegistryTab" class="vehicle-tab-panel hidden">
+          <div class="dashboard-grid codes-grid">
+            <form id="vehicleRegistryForm" class="panel point-form">
+              <div class="panel-heading"><div><h2>Νέο όχημα</h2><p>Τα βασικά στοιχεία εμφανίζονται στην αυτόματη συμπλήρωση.</p></div></div>
+              <input id="registryVehicleId" type="hidden">
+              <div class="form-grid">
+                <label>Κωδικός<input id="registryVehicleCode" maxlength="30" required placeholder="π.χ. LOUTRAKI-01"></label>
+                <label>Επιχειρησιακό όνομα<input id="registryVehicleName" maxlength="60" required placeholder="π.χ. Λουτράκι 1"></label>
+                <label>Τύπος<input id="registryVehicleType" maxlength="50" placeholder="π.χ. Ημιφορτηγό"></label>
+                <label>Χωρητικότητα νερού (L)<input id="registryVehicleWater" type="number" min="0" max="50000" placeholder="650"></label>
+                <label>Μάρκα<input id="registryVehicleMake" maxlength="50" placeholder="Mitsubishi"></label>
+                <label>Μοντέλο<input id="registryVehicleModel" maxlength="50" placeholder="L200"></label>
+                <label>Έτος<input id="registryVehicleYear" type="number" min="1950" max="2100" placeholder="2021"></label>
+                <label>Πινακίδα<input id="registryVehiclePlate" maxlength="20" placeholder="Προαιρετικά"></label>
+                <label class="full">Παρατηρήσεις<textarea id="registryVehicleNotes" rows="3" maxlength="1000"></textarea></label>
+              </div>
+              <label class="consent-row"><input id="registryVehicleActive" type="checkbox" checked><span>Ενεργό και διαθέσιμο για επιλογή</span></label>
+              <div class="form-actions"><button class="action-button primary" type="submit">Αποθήκευση</button><button id="cancelVehicleRegistry" class="action-button ghost" type="button">Καθαρισμός</button></div>
+              <div id="vehicleRegistryMessage" class="form-message"></div>
+            </form>
+            <div class="panel"><div class="panel-heading responsive"><div><h2>Καταχωρημένα οχήματα</h2><p>Αναζήτηση, επεξεργασία και απενεργοποίηση.</p></div><button id="refreshVehicleRegistry" class="action-button" type="button">↻ Ανανέωση</button></div><input id="vehicleRegistrySearch" class="admin-wide-search" type="search" placeholder="Αναζήτηση οχήματος…"><div id="vehicleRegistryList" class="registry-list"></div></div>
+          </div>
+        </div>
+
+        <div id="memberRegistryTab" class="vehicle-tab-panel hidden">
+          <div class="dashboard-grid codes-grid">
+            <form id="memberRegistryForm" class="panel point-form">
+              <div class="panel-heading"><div><h2>Νέο μέλος</h2><p>Το μητρώο μελών είναι ανεξάρτητο από τους λογαριασμούς διαχείρισης.</p></div></div>
+              <input id="registryMemberId" type="hidden">
+              <label>Ονοματεπώνυμο<input id="registryMemberName" maxlength="100" required placeholder="π.χ. Σταύρος Σορώτος"></label>
+              <label>Διακριτικό / σύντομο όνομα<input id="registryMemberCallsign" maxlength="50" placeholder="π.χ. Σταύρος"></label>
+              <label>Ιδιότητα<input id="registryMemberRole" maxlength="80" placeholder="π.χ. Οδηγός, επικεφαλής"></label>
+              <label>Τηλέφωνο<input id="registryMemberPhone" type="tel" maxlength="30" placeholder="Προαιρετικό — δεν εμφανίζεται δημόσια"></label>
+              <label class="consent-row"><input id="registryMemberActive" type="checkbox" checked><span>Ενεργό και διαθέσιμο για επιλογή</span></label>
+              <div class="form-actions"><button class="action-button primary" type="submit">Αποθήκευση</button><button id="cancelMemberRegistry" class="action-button ghost" type="button">Καθαρισμός</button></div>
+              <div id="memberRegistryMessage" class="form-message"></div>
+            </form>
+            <div class="panel"><div class="panel-heading responsive"><div><h2>Καταχωρημένα μέλη</h2><p>Γρήγορη επιλογή πληρώματος στην εφαρμογή.</p></div><button id="refreshMemberRegistry" class="action-button" type="button">↻ Ανανέωση</button></div><input id="memberRegistrySearch" class="admin-wide-search" type="search" placeholder="Αναζήτηση μέλους…"><div id="memberRegistryList" class="registry-list"></div></div>
           </div>
         </div>
       </section>
 
+      <section id="usersView" class="dashboard-section hidden">
+        <div class="panel">
+          <div class="panel-heading responsive"><div><h2>Χρήστες</h2><p>Πρόσκληση, ρόλοι, ενεργοποίηση και οριστική διαγραφή.</p></div><button id="openInviteUser" class="action-button primary" type="button">＋ Νέος χρήστης</button></div>
+          <div id="userManagementSetup" class="setup-notice hidden"></div>
+          <div class="table-tools users-tools"><input id="userSearch" type="search" placeholder="Αναζήτηση ονόματος ή email…"><select id="userRoleFilter"><option value="">Όλοι οι ρόλοι</option><option value="admin">Διαχειριστές</option><option value="editor">Συντάκτες</option><option value="viewer">Θεατές</option></select><select id="userStatusFilter"><option value="">Όλες οι καταστάσεις</option><option value="active">Ενεργοί</option><option value="inactive">Ανενεργοί</option></select></div>
+          <div id="usersList" class="users-list"></div>
+        </div>
+      </section>
+
+      <section id="historyView" class="dashboard-section hidden">
+        <div class="panel">
+          <div class="panel-heading responsive"><div><h2>Ιστορικό ενεργειών</h2><p>Ποιος έκανε τι και πότε μέσα στο διαχειριστικό.</p></div><button id="refreshAudit" class="action-button" type="button">↻ Ανανέωση</button></div>
+          <div class="table-tools audit-tools"><input id="auditSearch" type="search" placeholder="Αναζήτηση χρήστη, περιγραφής ή αντικειμένου…"><select id="auditActionFilter"><option value="">Όλες οι ενέργειες</option><option value="create">Δημιουργίες</option><option value="update">Αλλαγές</option><option value="delete">Διαγραφές</option><option value="approve">Εγκρίσεις</option><option value="login">Συνδέσεις</option></select><input id="auditDateFilter" type="date"></div>
+          <div id="auditList" class="audit-list"></div>
+        </div>
+      </section>
+
+
     </main>
   </div>
 
+
+  <div id="inviteUserModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="inviteUserTitle">
+    <form id="inviteUserForm" class="compact-sheet-card user-modal-card">
+      <button id="closeInviteUser" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>
+      <h2 id="inviteUserTitle">Πρόσκληση νέου χρήστη</h2>
+      <p>Ο χρήστης θα λάβει email για να ορίσει μόνος του κωδικό.</p>
+      <label>Ονοματεπώνυμο<input id="inviteFullName" required maxlength="100"></label>
+      <label>Email<input id="inviteEmail" type="email" required autocomplete="off"></label>
+      <label>Ρόλος<select id="inviteRole"><option value="viewer">Θεατής</option><option value="editor">Συντάκτης</option><option value="admin">Διαχειριστής</option></select></label>
+      <button class="action-button primary full" type="submit">Αποστολή πρόσκλησης</button>
+      <div id="inviteUserMessage" class="form-message"></div>
+    </form>
+  </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
@@ -248,6 +321,9 @@
   <script src="js/admin-app.js"></script>
   <script src="js/admin-submissions.js"></script>
   <script src="js/admin-live-crews.js"></script>
+  <script src="js/admin-directory.js"></script>
+  <script src="js/admin-users.js"></script>
+  <script src="js/admin-audit.js"></script>
   <script src="js/admin-ui.js"></script>
   <script src="js/pwa.js"></script>
 </body>

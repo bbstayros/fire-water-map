@@ -1,0 +1,10 @@
+(() => {
+  "use strict";
+  const ds=window.DataService,$=id=>document.getElementById(id);let logs=[],profile=null;
+  const esc=v=>String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
+  async function write(action,entityType,entityId,description,metadata={}){try{await ds.client.rpc("write_audit_log",{p_action:action,p_entity_type:entityType,p_entity_id:entityId||null,p_description:description,p_metadata:metadata});}catch(e){console.warn("Audit log",e);}}
+  window.AuditLog={write};
+  window.addEventListener("admin-dashboard-ready",e=>{profile=e.detail.profile;});document.querySelector('[data-view="history"]')?.addEventListener("click",load);$("refreshAudit")?.addEventListener("click",load);$("auditSearch")?.addEventListener("input",render);$("auditActionFilter")?.addEventListener("change",render);$("auditDateFilter")?.addEventListener("change",render);
+  async function load(){if(profile?.role!=="admin")return;const{data,error}=await ds.client.from("audit_logs").select("*").order("created_at",{ascending:false}).limit(500);if(error){$("auditList").innerHTML=`<p class="form-message error">${esc(error.message)}</p>`;return;}logs=data||[];render();}
+  function render(){const q=$("auditSearch").value.trim().toLocaleLowerCase("el"),action=$("auditActionFilter").value,date=$("auditDateFilter").value;const rows=logs.filter(x=>(!q||`${x.actor_email||""} ${x.description||""} ${x.entity_type||""}`.toLocaleLowerCase("el").includes(q))&&(!action||x.action===action)&&(!date||String(x.created_at).slice(0,10)===date));$("auditList").innerHTML=rows.length?rows.map(x=>`<article class="audit-item"><div class="audit-dot ${esc(x.action)}"></div><div><h3>${esc(x.description)}</h3><p>${esc(x.actor_email||"Σύστημα")} · ${new Date(x.created_at).toLocaleString("el-GR")}</p><small>${esc(x.entity_type||"")}${x.entity_id?` · ${esc(x.entity_id)}`:""}</small></div></article>`).join(""):'<p class="empty-table">Δεν υπάρχουν ενέργειες με αυτά τα φίλτρα.</p>';}
+})();

@@ -55,7 +55,7 @@
       throw new Error("Ο λογαριασμός δεν είναι ενεργός.");
     }
 
-    if (!["editor", "admin"].includes(profile.role)) {
+    if (!["viewer", "editor", "admin"].includes(profile.role)) {
       throw new Error("Ο λογαριασμός δεν έχει δικαίωμα διαχείρισης.");
     }
 
@@ -65,14 +65,15 @@
     document.getElementById("signedInUser").textContent =
       profile.full_name || user.email;
     document.getElementById("signedInRole").textContent =
-      profile.role === "admin" ? "Διαχειριστής" : "Συντάκτης";
+      profile.role === "admin" ? "Διαχειριστής" : profile.role === "editor" ? "Συντάκτης" : "Θεατής";
 
     loginView.classList.add("hidden");
     dashboard.classList.remove("hidden");
 
     await loadPoints();
     document.querySelectorAll(".admin-only").forEach((el) => el.classList.toggle("hidden", profile.role !== "admin"));
-    window.dispatchEvent(new CustomEvent("admin-dashboard-ready", { detail: { profile } }));
+    document.querySelectorAll(".editor-only").forEach((el) => el.classList.toggle("hidden", !["editor","admin"].includes(profile.role)));
+    window.dispatchEvent(new CustomEvent("admin-dashboard-ready", { detail: { profile, user } }));
     setView("overview");
   }
 
@@ -97,6 +98,7 @@
       );
       message("loginMessage", "");
       await showDashboard();
+      window.AuditLog?.write("login","session",state.user?.id,"Σύνδεση στο διαχειριστικό");
     } catch (error) {
       console.error(error);
       message("loginMessage", readableAuthError(error), true);
@@ -135,6 +137,20 @@
     renderStats();
     renderTable();
     renderRecent();
+    loadActiveVehicleStat();
+  }
+
+  async function loadActiveVehicleStat() {
+    const element = document.getElementById("statActiveVehicles");
+    if (!element) return;
+    try {
+      const { data, error } = await dataService.client.rpc("active_vehicle_count");
+      if (error) throw error;
+      element.textContent = Number(data || 0);
+    } catch (error) {
+      console.warn("Active vehicle count unavailable", error);
+      element.textContent = "—";
+    }
   }
 
   function renderStats() {
@@ -192,7 +208,7 @@
       : "<p>Δεν υπάρχουν σημεία.</p>";
 
     container.querySelectorAll("[data-recent-edit]").forEach((button) => {
-      button.addEventListener("click", () => editPoint(button.dataset.recentEdit));
+      button.addEventListener("click", () => { if (["editor","admin"].includes(state.profile?.role)) editPoint(button.dataset.recentEdit); });
     });
   }
 
@@ -242,7 +258,7 @@
             <td><span class="table-status ${point.condition}">${conditions[point.condition]}</span></td>
             <td><span class="publication-status ${point.publication_status}">${publications[point.publication_status]}</span></td>
             <td class="row-actions">
-              <button type="button" data-edit="${point.id}" title="Επεξεργασία" aria-label="Επεξεργασία">✏️</button>
+              ${["editor","admin"].includes(state.profile?.role) ? `<button type="button" data-edit="${point.id}" title="Επεξεργασία" aria-label="Επεξεργασία">✏️</button>` : ""}
               ${state.profile?.role === "admin"
                 ? `<button type="button" data-delete="${point.id}" title="Διαγραφή" aria-label="Διαγραφή">🗑️</button>`
                 : ""}
@@ -318,6 +334,7 @@
     try {
       const results = await Promise.allSettled(ids.map((id) => dataService.deletePoint(id)));
       const failures = results.filter((result) => result.status === "rejected");
+      window.AuditLog?.write("delete", "water_point", null, `Μαζική διαγραφή ${ids.length - failures.length} σημείων`, { ids });
       await loadPoints();
       if (failures.length) {
         alert(`Διαγράφηκαν ${ids.length - failures.length} σημεία, αλλά απέτυχε η διαγραφή ${failures.length}.`);
@@ -342,7 +359,9 @@
     editor: ["Νέο σημείο", "Καταχώρηση ή επεξεργασία επιβεβαιωμένων στοιχείων"],
     submissions: ["Υπό έγκριση", "Έλεγχος και έγκριση καταχωρήσεων που έγιναν από κινητό"],
     codes: ["Κωδικοί καταχώρησης", "Διαχείριση κωδικών για δημόσιες καταχωρήσεις"],
-    operations: ["Οχήματα", "Ενεργά οχήματα, πληρώματα και τελευταία στίγματα"]
+    operations: ["Οχήματα", "Live επιχειρήσεις, μητρώο οχημάτων και μελών"],
+    users: ["Χρήστες", "Διαχείριση πρόσβασης και ρόλων"],
+    history: ["Ιστορικό", "Καταγραφή ενεργειών διαχείρισης"]
   };
 
   function setView(name) {
@@ -539,6 +558,7 @@
 
     try {
       await dataService.deletePoint(id);
+      window.AuditLog?.write("delete", "water_point", id, `Διαγραφή σημείου «${point.name}»`);
       await loadPoints();
     } catch (error) {
       console.error(error);

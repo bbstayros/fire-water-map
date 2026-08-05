@@ -191,12 +191,18 @@
             <label>Κωδικός επιχείρησης
               <input id="crewOperationCode" type="text" minlength="4" maxlength="30" required autocomplete="off" autocapitalize="characters" placeholder="π.χ. ΦΩΤΙΑ2026">
             </label>
-            <label>Όνομα οχήματος
-              <input id="crewVehicleName" type="text" minlength="2" maxlength="40" required autocomplete="off" placeholder="π.χ. Όχημα 1">
+            <label>Όχημα
+              <div class="autocomplete-field"><input id="crewVehicleName" type="text" minlength="2" maxlength="60" required autocomplete="off" placeholder="Αναζήτηση ή χειροκίνητη καταχώρηση…"><div id="vehicleSuggestions" class="autocomplete-menu hidden"></div></div>
+              <small id="selectedVehicleMeta" class="field-help">Γράψε για αναζήτηση ή χρησιμοποίησε μη καταχωρημένο όχημα.</small>
             </label>
             <label>Πλήρωμα
-              <input id="crewMembers" type="text" maxlength="80" autocomplete="off" placeholder="π.χ. Σταύρος, Γιώργος, Μαρία">
+              <div class="autocomplete-field"><input id="crewMemberSearch" type="text" autocomplete="off" placeholder="Αναζήτηση μέλους…"><div id="memberSuggestions" class="autocomplete-menu hidden"></div></div>
+              <div id="selectedCrewMembers" class="selected-chips"></div>
+              <input id="crewMembers" type="hidden">
+              <small class="field-help">Μπορείς να επιλέξεις μέλη ή να γράψεις ονόματα χωρισμένα με κόμμα.</small>
+              <input id="crewManualMembers" type="text" maxlength="120" autocomplete="off" placeholder="Άλλα ονόματα, χωρισμένα με κόμμα">
             </label>
+            <div id="recentCrewChoice" class="recent-choice hidden"><span>Τελευταίο πλήρωμα</span><strong id="recentCrewLabel"></strong><button id="reuseRecentCrew" type="button">Χρήση ξανά</button></div>
             <label class="consent-row">
               <input id="crewKeepScreenOn" type="checkbox" checked>
               <span>Να διατηρείται ενεργή η οθόνη, όπου το επιτρέπει η συσκευή.</span>

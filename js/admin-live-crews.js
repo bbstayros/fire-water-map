@@ -47,7 +47,7 @@
 
     const { data: crews, error: crewError } = await ds.client
       .from("crew_positions")
-      .select("room_id,session_id,vehicle_name,latitude,longitude,accuracy_m,is_sharing,last_seen_at")
+      .select("room_id,session_id,vehicle_name,crew_members_text,latitude,longitude,accuracy_m,is_sharing,last_seen_at")
       .order("last_seen_at", { ascending: false });
 
     if (crewError) console.warn(crewError);
@@ -66,15 +66,15 @@
               <div class="admin-vehicle-icon">🚒</div>
               <div class="admin-vehicle-copy">
                 <div class="admin-vehicle-title"><strong>${escapeHtml(identity.vehicle)}</strong><span>${escapeHtml(status.label)}</span></div>
-                <div class="admin-vehicle-meta"><span>🎯 ${accuracy}</span><span>👥 ${escapeHtml(identity.members||"Χωρίς δηλωμένο πλήρωμα")}</span></div>
+                <div class="admin-vehicle-meta"><span>🎯 ${accuracy}</span><span>👥 ${escapeHtml(row.crew_members_text||identity.members||"Χωρίς δηλωμένο πλήρωμα")}</span></div>
               </div>
               ${mapLink?`<a class="vehicle-map-button" target="_blank" rel="noopener" href="${mapLink}">Χάρτης</a>`:""}
             </article>`;
           }).join("")}</div>` : '<p class="empty-operation">Δεν έχει συνδεθεί ακόμη όχημα.</p>';
           return `<article class="operation-room-card ${room.is_active ? "" : "inactive"}">
             <div class="operation-room-card-head">
-              <div><div class="operation-title-row"><h3>${escapeHtml(room.name)}</h3><span class="publication-status ${room.is_active ? "published" : "hidden"}">${room.is_active ? "Ενεργή" : "Κλειστή"}</span></div><small>Κωδικός …${escapeHtml(room.code_hint)} · ${escapeHtml(expiry)}</small></div>
-              <div class="operation-count"><strong>${activeCrewCount}</strong><span>ενεργά</span></div>
+              <div><div class="operation-title-row"><h3>${escapeHtml(room.name)}</h3><span class="publication-status ${room.is_active ? "published" : "hidden"}">${room.is_active ? "Ανοιχτή επιχείρηση" : "Κλειστή επιχείρηση"}</span></div><small>Κωδικός …${escapeHtml(room.code_hint)} · ${escapeHtml(expiry)}</small></div>
+              <div class="operation-count ${activeCrewCount?"has-live":"no-live"}"><strong>${activeCrewCount}</strong><span>${activeCrewCount===1?"όχημα μεταδίδει":"οχήματα μεταδίδουν"}</span></div>
             </div>
             ${vehicles}
             <div class="operation-footer">
@@ -90,7 +90,7 @@
       button.addEventListener("click", async () => {
         if (!confirm("Να κλείσει η επιχείρηση και να σταματήσουν όλα τα live στίγματα;")) return;
         const { error } = await ds.client.rpc("close_operation_room", { p_room_id: button.dataset.closeRoom });
-        if (error) alert(error.message); else loadRooms();
+        if (error) alert(error.message); else { window.AuditLog?.write("update","operation_room",button.dataset.closeRoom,"Κλείσιμο live επιχείρησης"); loadRooms(); }
       });
     });
 
@@ -103,6 +103,7 @@
         if (error) {
           alert(error.message || "Η επαναλειτουργία απέτυχε.");
         } else {
+          window.AuditLog?.write("update","operation_room",button.dataset.reopenRoom,"Επαναλειτουργία live επιχείρησης");
           loadRooms();
         }
       });
@@ -129,6 +130,7 @@
     }
 
     setMessage(`Η επιχείρηση δημιουργήθηκε. Δώσε στα πληρώματα τον κωδικό: ${code}`);
+    window.AuditLog?.write("create","operation_room",null,`Δημιουργία live επιχείρησης «${document.getElementById("operationRoomName").value.trim()}»`);
     form.reset();
     loadRooms();
   });

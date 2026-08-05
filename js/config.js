@@ -5,6 +5,8 @@ window.APP_CONFIG = Object.freeze({
   initialZoom: 13,
   defaultRadiusKm: 4,
   fallbackGeoJson: "data/points.geojson",
+  siteUrl: "https://bbstayros.github.io/fire-water-map",
+  userManagementFunction: "admin-users",
 
   // Supabase browser credentials. Το publishable key επιτρέπεται να βρίσκεται
   // στο frontend, εφόσον το RLS και οι policies έχουν ρυθμιστεί σωστά.
