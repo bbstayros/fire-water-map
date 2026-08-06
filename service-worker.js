@@ -1,4 +1,4 @@
-const VERSION="fwm-3.3.0-users-directory-audit";
+const VERSION="fwm-3.4.0-vehicle-popup-autocomplete";
 const STATIC=`${VERSION}-static`,RUNTIME=`${VERSION}-runtime`;
 const SHELL=["./","./index.html","./admin.html","./manifest.webmanifest","./css/app.css","./js/config.js","./js/offline-store.js","./js/data-service.js","./js/public-app.js","./js/public-submission.js","./js/live-crews.js","./js/public-ui.js","./js/pwa.js","./js/admin-app.js","./js/admin-submissions.js","./js/admin-live-crews.js","./set-password.html","./js/admin-audit.js","./js/admin-users.js","./js/admin-directory.js","./js/admin-ui.js","./icons/logo.svg","./icons/app-icon.svg","./icons/hydrant.svg","./icons/tank.svg","./icons/water-source.svg","./data/points.geojson"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(STATIC).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
