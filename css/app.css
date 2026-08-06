@@ -475,3 +475,20 @@ button:disabled{opacity:.65;cursor:wait}.connection-badge.error{color:var(--bad)
 .crew-member-card strong{color:#8e1b16}.crew-member-card span{font-weight:800}.crew-member-card small{grid-column:2;color:var(--muted)}
 .vehicle-empty-info{margin:0;color:var(--muted)}
 @media(max-width:520px){.vehicle-details-grid,.vehicle-quick-grid{grid-template-columns:1fr}.vehicle-sheet-actions{grid-template-columns:1fr 1fr}.crew-member-card{grid-template-columns:1fr}.crew-member-card small{grid-column:1}}
+
+/* v3.4.1 custom vehicle SVG markers */
+.vehicle-type-icon{display:inline-block;width:25px;height:32px;vertical-align:middle;object-fit:contain;flex:0 0 auto}
+.registry-vehicle-icon{display:block;width:42px;height:52px;object-fit:contain}
+.registry-card-icon:has(.registry-vehicle-icon){background:transparent!important;border:0!important;padding:0!important;overflow:visible}
+.vehicle-sheet-icon{display:grid;place-items:center;width:58px;height:68px;background:transparent!important;border:0!important;flex:0 0 auto}
+.vehicle-sheet-icon .vehicle-type-icon{width:52px;height:65px}
+.crew-vehicle-marker{position:relative;width:52px;height:66px;filter:drop-shadow(0 4px 5px rgba(15,23,42,.3));transform-origin:50% 90%}
+.crew-vehicle-marker-icon{display:block;width:52px;height:66px;object-fit:contain}
+.crew-vehicle-status-dot{position:absolute;right:1px;top:2px;width:12px;height:12px;border-radius:50%;background:#16a34a;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.crew-vehicle-marker.delayed .crew-vehicle-status-dot{background:var(--warn,#ca8a04)}
+.crew-vehicle-marker.stale .crew-vehicle-status-dot{background:#d97706}
+.crew-vehicle-marker.offline .crew-vehicle-status-dot{background:var(--bad,#dc2626)}
+.crew-vehicle-marker.offline{opacity:.72;filter:grayscale(.25) drop-shadow(0 4px 5px rgba(15,23,42,.25))}
+.crew-list-item h3{display:flex;align-items:center;gap:7px}.crew-list-item h3 .vehicle-type-icon{width:26px;height:34px}
+.autocomplete-menu strong{display:flex;align-items:center;gap:8px}.autocomplete-menu strong .vehicle-type-icon{width:25px;height:32px}
+@media(max-width:600px){.crew-vehicle-marker,.crew-vehicle-marker-icon{width:46px;height:59px}.vehicle-sheet-icon{width:50px;height:60px}.vehicle-sheet-icon .vehicle-type-icon{width:46px;height:58px}}

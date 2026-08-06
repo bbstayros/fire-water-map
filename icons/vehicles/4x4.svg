@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 80" role="img" aria-label="Όχημα 4 επί 4">
+  <path d="M32 2C15.4 2 4 14.5 4 30.2 4 50.8 32 78 32 78s28-27.2 28-47.8C60 14.5 48.6 2 32 2z" fill="#237a57" stroke="#fff" stroke-width="3"/>
+  <g fill="none" stroke="#fff" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 34h32v12H16z"/><path d="M21 34l4-10h15l6 10"/><path d="M26 25v9M39 25v9"/>
+    <circle cx="22" cy="47" r="4" fill="#fff" stroke="none"/><circle cx="43" cy="47" r="4" fill="#fff" stroke="none"/>
+    <path d="M14 40h5M45 40h5M29 41h6"/>
+  </g>
+</svg>

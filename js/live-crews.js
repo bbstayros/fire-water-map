@@ -536,16 +536,25 @@
     return state.directory.members.filter(member => tokens.includes(normalized(member.callsign)) || tokens.includes(normalized(member.full_name)));
   }
 
-  function unitIcon(vehicleOrRow) {
+  function unitType(vehicleOrRow) {
     const vehicle = vehicleOrRow?.display_name !== undefined ? vehicleOrRow : vehicleForCrew(vehicleOrRow);
     const text = normalized(`${vehicle?.vehicle_type || ""} ${vehicle?.display_name || vehicleOrRow?.vehicle_name || ""}`);
-    if (/πεζο|ομάδα|τμήμα/.test(text)) return "👥";
-    if (/υδροφόρ|φορτηγ/.test(text)) return "🚚";
-    if (/πυροσβεσ|fire/.test(text)) return "🚒";
-    if (/4x4|4×4|τετρακίνη|suv/.test(text)) return "🚙";
-    if (/αγροτικ|ημιφορτηγ|pickup|pick-up/.test(text)) return "🛻";
-    if (/ιχ|επιβατικ/.test(text)) return "🚗";
-    return "🚒";
+    if (/πεζο|ομάδα|τμήμα/.test(text)) return "foot-team";
+    if (/υδροφόρ|βυτιοφόρ|φορτηγ/.test(text)) return "tanker";
+    if (/πυροσβεσ|fire/.test(text)) return "fire-engine";
+    if (/4x4|4×4|τετρακίνη|suv/.test(text)) return "4x4";
+    if (/αγροτικ|ημιφορτηγ|pickup|pick-up|l200|navara|hilux|ranger/.test(text)) return "pickup";
+    if (/ιχ|επιβατικ|car/.test(text)) return "car";
+    return "fire-engine";
+  }
+
+  function unitIconUrl(vehicleOrRow) {
+    return `icons/vehicles/${unitType(vehicleOrRow)}.svg`;
+  }
+
+  function unitIcon(vehicleOrRow, className = "vehicle-type-icon") {
+    const identity = vehicleOrRow?.display_name || crewIdentity(vehicleOrRow).vehicle || "Όχημα";
+    return `<img class="${className}" src="${unitIconUrl(vehicleOrRow)}" alt="" aria-hidden="true" title="${escapeHtml(identity)}">`;
   }
 
   function memberSummary(row) {
@@ -619,7 +628,7 @@
   function markerHtml(row) {
     const cls = crewClass(row);
     const identity = crewIdentity(row);
-    return `<div class="crew-marker ${cls}" title="${escapeHtml(identity.vehicle)}">${unitIcon(row)}</div>`;
+    return `<div class="crew-vehicle-marker ${cls}" title="${escapeHtml(identity.vehicle)}">${unitIcon(row, "crew-vehicle-marker-icon")}<span class="crew-vehicle-status-dot"></span></div>`;
   }
 
   function renderCrewMarkers() {
@@ -636,8 +645,8 @@
       const icon = L.divIcon({
         html: markerHtml(row),
         className: "",
-        iconSize: [42, 42],
-        iconAnchor: [21, 21]
+        iconSize: [52, 66],
+        iconAnchor: [26, 62]
       });
 
       let marker = state.markers.get(row.session_id);
