@@ -57,8 +57,7 @@
     directory: { vehicles: [], members: [] },
     selectedVehicleId: null,
     selectedMemberIds: [],
-    selectedMemberNames: [],
-    activeAutocomplete: null
+    selectedMemberNames: []
   };
 
   ui.code.value = state.code;
@@ -214,134 +213,15 @@
     }
   }
 
-  function hideAutocompleteMenus(except = null) {
-    if (except !== "vehicle") ui.vehicleSuggestions?.classList.add("hidden");
-    if (except !== "member") ui.memberSuggestions?.classList.add("hidden");
-  }
-
   async function loadDirectory() {
-    const code = ui.code.value.trim().toUpperCase();
-    if (code.length < 4) {
-      state.directory = { vehicles: [], members: [] };
-      hideAutocompleteMenus();
-      return;
-    }
-    try {
-      const rows = await rpc("list_operation_directory", { p_code: code });
-      const result = Array.isArray(rows) ? rows[0] : rows;
-      state.directory = {
-        vehicles: Array.isArray(result?.vehicles) ? result.vehicles : [],
-        members: Array.isArray(result?.members) ? result.members : []
-      };
-      if (state.activeAutocomplete === "vehicle") renderVehicleSuggestions();
-      if (state.activeAutocomplete === "member") renderMemberSuggestions();
-    } catch (error) {
-      console.warn("Directory unavailable", error);
-      hideAutocompleteMenus();
-    }
+    const code=ui.code.value.trim().toUpperCase();
+    if(code.length<4)return;
+    try{const rows=await rpc("list_operation_directory",{p_code:code});const result=Array.isArray(rows)?rows[0]:rows;state.directory={vehicles:result?.vehicles||[],members:result?.members||[]};renderVehicleSuggestions();renderMemberSuggestions();}catch(error){console.warn("Directory unavailable",error);}
   }
-
-  function renderVehicleSuggestions() {
-    if (!ui.vehicleSuggestions || state.activeAutocomplete !== "vehicle") return;
-    hideAutocompleteMenus("vehicle");
-    const q = ui.name.value.trim().toLocaleLowerCase("el");
-    const rows = state.directory.vehicles
-      .filter(v => !q || `${v.display_name} ${v.code} ${v.make || ""} ${v.model || ""} ${v.vehicle_type || ""}`.toLocaleLowerCase("el").includes(q))
-      .slice(0, 8);
-    ui.vehicleSuggestions.innerHTML = rows.map(v => `
-      <button type="button" data-vehicle-id="${v.id}">
-        <strong>${unitIcon(v)} ${escapeHtml(v.display_name)}</strong>
-        <small>${escapeHtml([v.make, v.model, v.water_capacity_l ? `${v.water_capacity_l} L` : ""].filter(Boolean).join(" · "))}</small>
-      </button>`).join("");
-    ui.vehicleSuggestions.classList.toggle("hidden", !rows.length);
-    ui.vehicleSuggestions.querySelectorAll("[data-vehicle-id]").forEach(button => {
-      button.addEventListener("click", event => {
-        event.preventDefault();
-        event.stopPropagation();
-        const vehicle = state.directory.vehicles.find(item => item.id === button.dataset.vehicleId);
-        if (!vehicle) return;
-        state.selectedVehicleId = vehicle.id;
-        ui.name.value = vehicle.display_name;
-        ui.selectedVehicleMeta.textContent = [vehicle.make, vehicle.model, vehicle.water_capacity_l ? `${vehicle.water_capacity_l} L` : ""].filter(Boolean).join(" · ") || "Καταχωρημένο όχημα";
-        state.activeAutocomplete = null;
-        hideAutocompleteMenus();
-        localStorage.setItem("fwm-last-vehicle-id", vehicle.id);
-      });
-    });
-  }
-
-  function renderMemberSuggestions() {
-    if (!ui.memberSuggestions || state.activeAutocomplete !== "member") return;
-    hideAutocompleteMenus("member");
-    const q = ui.memberSearch.value.trim().toLocaleLowerCase("el");
-    const rows = state.directory.members
-      .filter(m => !state.selectedMemberIds.includes(m.id) && (!q || `${m.full_name} ${m.callsign || ""}`.toLocaleLowerCase("el").includes(q)))
-      .slice(0, 10);
-    ui.memberSuggestions.innerHTML = rows.map(m => `
-      <button type="button" data-member-id="${m.id}">
-        <strong>${escapeHtml(m.callsign || m.full_name)}</strong>
-        <small>${escapeHtml(m.full_name)}${m.member_role ? ` · ${escapeHtml(m.member_role)}` : ""}</small>
-      </button>`).join("");
-    ui.memberSuggestions.classList.toggle("hidden", !rows.length);
-    ui.memberSuggestions.querySelectorAll("[data-member-id]").forEach(button => {
-      button.addEventListener("click", event => {
-        event.preventDefault();
-        event.stopPropagation();
-        const member = state.directory.members.find(item => item.id === button.dataset.memberId);
-        if (!member) return;
-        state.selectedMemberIds.push(member.id);
-        state.selectedMemberNames.push(member.callsign || member.full_name);
-        ui.memberSearch.value = "";
-        renderSelectedMembers();
-        renderMemberSuggestions();
-        ui.memberSearch.focus();
-      });
-    });
-  }
-
-  function renderSelectedMembers() {
-    ui.selectedMembers.innerHTML = state.selectedMemberNames.map((name, index) => `<span>${escapeHtml(name)}<button type="button" data-remove-member="${index}" aria-label="Αφαίρεση ${escapeHtml(name)}">×</button></span>`).join("");
-    ui.selectedMembers.querySelectorAll("[data-remove-member]").forEach(button => {
-      button.addEventListener("click", () => {
-        const index = Number(button.dataset.removeMember);
-        state.selectedMemberIds.splice(index, 1);
-        state.selectedMemberNames.splice(index, 1);
-        renderSelectedMembers();
-        if (state.activeAutocomplete === "member") renderMemberSuggestions();
-      });
-    });
-    ui.members.value = state.selectedMemberNames.join(", ");
-  }
-
-  ui.code?.addEventListener("change", loadDirectory);
-  ui.code?.addEventListener("blur", loadDirectory);
-  ui.name?.addEventListener("input", () => {
-    state.selectedVehicleId = null;
-    state.activeAutocomplete = "vehicle";
-    renderVehicleSuggestions();
-  });
-  ui.name?.addEventListener("focus", async () => {
-    state.activeAutocomplete = "vehicle";
-    hideAutocompleteMenus("vehicle");
-    await loadDirectory();
-    renderVehicleSuggestions();
-  });
-  ui.memberSearch?.addEventListener("input", () => {
-    state.activeAutocomplete = "member";
-    renderMemberSuggestions();
-  });
-  ui.memberSearch?.addEventListener("focus", async () => {
-    state.activeAutocomplete = "member";
-    hideAutocompleteMenus("member");
-    await loadDirectory();
-    renderMemberSuggestions();
-  });
-  document.addEventListener("pointerdown", event => {
-    if (!event.target.closest(".autocomplete-field")) {
-      state.activeAutocomplete = null;
-      hideAutocompleteMenus();
-    }
-  });
+  function renderVehicleSuggestions(){if(!ui.vehicleSuggestions)return;const q=ui.name.value.trim().toLocaleLowerCase("el");const rows=state.directory.vehicles.filter(v=>!q||`${v.display_name} ${v.code} ${v.make||""} ${v.model||""}`.toLocaleLowerCase("el").includes(q)).slice(0,8);ui.vehicleSuggestions.innerHTML=rows.map(v=>`<button type="button" data-vehicle-id="${v.id}"><strong>${escapeHtml(v.display_name)}</strong><small>${escapeHtml([v.make,v.model,v.water_capacity_l?`${v.water_capacity_l} L`:""].filter(Boolean).join(" · "))}</small></button>`).join("");ui.vehicleSuggestions.classList.toggle("hidden",!rows.length);ui.vehicleSuggestions.querySelectorAll("[data-vehicle-id]").forEach(b=>b.onclick=()=>{const v=state.directory.vehicles.find(x=>x.id===b.dataset.vehicleId);state.selectedVehicleId=v.id;ui.name.value=v.display_name;ui.selectedVehicleMeta.textContent=[v.make,v.model,v.water_capacity_l?`${v.water_capacity_l} L`:""].filter(Boolean).join(" · ")||"Καταχωρημένο όχημα";ui.vehicleSuggestions.classList.add("hidden");localStorage.setItem("fwm-last-vehicle-id",v.id);});}
+  function renderMemberSuggestions(){if(!ui.memberSuggestions)return;const q=ui.memberSearch.value.trim().toLocaleLowerCase("el");const rows=state.directory.members.filter(m=>!state.selectedMemberIds.includes(m.id)&&(!q||`${m.full_name} ${m.callsign||""}`.toLocaleLowerCase("el").includes(q))).slice(0,8);ui.memberSuggestions.innerHTML=rows.map(m=>`<button type="button" data-member-id="${m.id}"><strong>${escapeHtml(m.callsign||m.full_name)}</strong><small>${escapeHtml(m.full_name)}</small></button>`).join("");ui.memberSuggestions.classList.toggle("hidden",!rows.length);ui.memberSuggestions.querySelectorAll("[data-member-id]").forEach(b=>b.onclick=()=>{const m=state.directory.members.find(x=>x.id===b.dataset.memberId);state.selectedMemberIds.push(m.id);state.selectedMemberNames.push(m.callsign||m.full_name);ui.memberSearch.value="";ui.memberSuggestions.classList.add("hidden");renderSelectedMembers();});}
+  function renderSelectedMembers(){ui.selectedMembers.innerHTML=state.selectedMemberNames.map((name,i)=>`<span>${escapeHtml(name)}<button type="button" data-remove-member="${i}">×</button></span>`).join("");ui.selectedMembers.querySelectorAll("[data-remove-member]").forEach(b=>b.onclick=()=>{const i=Number(b.dataset.removeMember);state.selectedMemberIds.splice(i,1);state.selectedMemberNames.splice(i,1);renderSelectedMembers();});ui.members.value=state.selectedMemberNames.join(", ");}
+  ui.code?.addEventListener("change",loadDirectory);ui.code?.addEventListener("blur",loadDirectory);ui.name?.addEventListener("input",()=>{state.selectedVehicleId=null;renderVehicleSuggestions();});ui.name?.addEventListener("focus",()=>{loadDirectory();renderVehicleSuggestions();});ui.memberSearch?.addEventListener("input",renderMemberSuggestions);ui.memberSearch?.addEventListener("focus",()=>{loadDirectory();renderMemberSuggestions();});
   async function startSharing(event) {
     event.preventDefault();
 
@@ -514,60 +394,6 @@
     }
   }
 
-  function normalized(value) {
-    return String(value || "").trim().toLocaleLowerCase("el");
-  }
-
-  function vehicleForCrew(row) {
-    if (row?.vehicle && typeof row.vehicle === "object") return row.vehicle;
-    if (row?.vehicle_id) {
-      const byId = state.directory.vehicles.find(vehicle => String(vehicle.id) === String(row.vehicle_id));
-      if (byId) return byId;
-    }
-    const identity = crewIdentity(row);
-    return state.directory.vehicles.find(vehicle => normalized(vehicle.display_name) === normalized(identity.vehicle)) || null;
-  }
-
-  function membersForCrew(row) {
-    const explicitIds = Array.isArray(row?.member_ids) ? row.member_ids.map(String) : [];
-    if (explicitIds.length) return state.directory.members.filter(member => explicitIds.includes(String(member.id)));
-    const identity = crewIdentity(row);
-    const tokens = identity.members.split(/[,·]/).map(normalized).filter(Boolean);
-    return state.directory.members.filter(member => tokens.includes(normalized(member.callsign)) || tokens.includes(normalized(member.full_name)));
-  }
-
-  function unitType(vehicleOrRow) {
-    const vehicle = vehicleOrRow?.display_name !== undefined ? vehicleOrRow : vehicleForCrew(vehicleOrRow);
-    const text = normalized(`${vehicle?.vehicle_type || ""} ${vehicle?.display_name || vehicleOrRow?.vehicle_name || ""}`);
-    if (/πεζο|ομάδα|τμήμα/.test(text)) return "foot-team";
-    if (/υδροφόρ|βυτιοφόρ|φορτηγ/.test(text)) return "tanker";
-    if (/πυροσβεσ|fire/.test(text)) return "fire-engine";
-    if (/4x4|4×4|τετρακίνη|suv/.test(text)) return "4x4";
-    if (/αγροτικ|ημιφορτηγ|pickup|pick-up|l200|navara|hilux|ranger/.test(text)) return "pickup";
-    if (/ιχ|επιβατικ|car/.test(text)) return "car";
-    return "fire-engine";
-  }
-
-  function unitIconUrl(vehicleOrRow) {
-    return `icons/vehicles/${unitType(vehicleOrRow)}.svg`;
-  }
-
-  function unitIcon(vehicleOrRow, className = "vehicle-type-icon") {
-    const identity = vehicleOrRow?.display_name || crewIdentity(vehicleOrRow).vehicle || "Όχημα";
-    return `<img class="${className}" src="${unitIconUrl(vehicleOrRow)}" alt="" aria-hidden="true" title="${escapeHtml(identity)}">`;
-  }
-
-  function memberSummary(row) {
-    const matched = membersForCrew(row);
-    if (matched.length) return matched.map(member => `${member.callsign ? `${member.callsign} — ` : ""}${member.full_name}`).join(" · ");
-    return crewIdentity(row).members;
-  }
-
-  function vehicleSummary(vehicle) {
-    if (!vehicle) return "";
-    return [vehicle.make, vehicle.model, vehicle.year].filter(Boolean).join(" ");
-  }
-
   function renderCrewList() {
     ui.roomLabel.textContent = state.roomName || "Επιχείρηση";
     if (!state.crews.length) {
@@ -585,13 +411,13 @@
       return `
         <article class="crew-list-item ${cls}">
           <div>
-            <h3>${unitIcon(row)} ${escapeHtml(identity.vehicle)}</h3>
+            <h3>🚒 ${escapeHtml(identity.vehicle)}</h3>
             <div class="crew-list-meta">
               <span>● ${escapeHtml(liveLine(row))}</span>
               <span>🎯 ${accuracy}</span>
               ${distance ? `<span>📍 ${distance}</span>` : ""}
             </div>
-            ${memberSummary(row) ? `<p class="crew-members-line"><strong>Πλήρωμα:</strong> ${escapeHtml(memberSummary(row))}</p>` : ""}
+            ${identity.members ? `<p class="crew-members-line"><strong>Πλήρωμα:</strong> ${escapeHtml(identity.members)}</p>` : ""}
           </div>
           <div class="crew-list-actions">
             <button class="action-button" type="button" data-show-crew="${row.session_id}">Στον χάρτη</button>
@@ -628,7 +454,7 @@
   function markerHtml(row) {
     const cls = crewClass(row);
     const identity = crewIdentity(row);
-    return `<div class="crew-vehicle-marker ${cls}" title="${escapeHtml(identity.vehicle)}">${unitIcon(row, "crew-vehicle-marker-icon")}<span class="crew-vehicle-status-dot"></span></div>`;
+    return `<div class="crew-marker ${cls}" title="${escapeHtml(identity.vehicle)}">🚒</div>`;
   }
 
   function renderCrewMarkers() {
@@ -645,8 +471,8 @@
       const icon = L.divIcon({
         html: markerHtml(row),
         className: "",
-        iconSize: [52, 66],
-        iconAnchor: [26, 62]
+        iconSize: [42, 42],
+        iconAnchor: [21, 21]
       });
 
       let marker = state.markers.get(row.session_id);
@@ -679,85 +505,53 @@
     }
   }
 
-  function renderVehicleDetails(row) {
-    const identity = crewIdentity(row);
-    const vehicle = vehicleForCrew(row);
-    const members = membersForCrew(row);
-    const crewFallback = identity.members;
-    const fields = vehicle ? [
-      ["Κωδικός", vehicle.code],
-      ["Τύπος", vehicle.vehicle_type],
-      ["Μάρκα", vehicle.make],
-      ["Μοντέλο", vehicle.model],
-      ["Έτος", vehicle.year],
-      ["Δεξαμενή", vehicle.water_capacity_l != null ? `${vehicle.water_capacity_l} L` : null],
-      ["Πινακίδα", vehicle.plate_number],
-      ["Παρατηρήσεις", vehicle.notes]
-    ].filter(([, value]) => value !== null && value !== undefined && value !== "") : [];
-
-    const vehicleHtml = fields.length
-      ? `<dl class="vehicle-details-grid">${fields.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>`
-      : '<p class="vehicle-empty-info">Δεν υπάρχουν επιπλέον καταχωρημένα στοιχεία για το όχημα.</p>';
-
-    const membersHtml = members.length
-      ? members.map(member => `<article class="crew-member-card"><strong>${escapeHtml(member.callsign || "Χωρίς διακριτικό")}</strong><span>${escapeHtml(member.full_name)}</span>${member.member_role ? `<small>${escapeHtml(member.member_role)}</small>` : ""}</article>`).join("")
-      : crewFallback
-        ? `<article class="crew-member-card"><span>${escapeHtml(crewFallback)}</span><small>Χειροκίνητη δήλωση πληρώματος</small></article>`
-        : '<p class="vehicle-empty-info">Δεν δηλώθηκαν μέλη πληρώματος.</p>';
-
-    return `
-      <div class="vehicle-sheet-heading">
-        <span class="vehicle-sheet-icon">${unitIcon(row)}</span>
-        <div><small>Πληροφορίες μονάδας</small><h2>${escapeHtml(identity.vehicle)}</h2>${vehicleSummary(vehicle) ? `<p>${escapeHtml(vehicleSummary(vehicle))}</p>` : ""}</div>
-      </div>
-      <section class="vehicle-detail-section"><h3>Στοιχεία οχήματος</h3>${vehicleHtml}</section>
-      <section class="vehicle-detail-section"><h3>Πλήρωμα</h3><div class="crew-member-list">${membersHtml}</div></section>
-      <button class="action-button full" type="button" data-back-vehicle-card="${row.session_id}">← Επιστροφή</button>`;
-  }
-
-  function openVehicleDetails(row) {
-    const content = document.getElementById("sheetContent");
-    if (!content) return;
-    content.innerHTML = renderVehicleDetails(row);
-    content.querySelector("[data-back-vehicle-card]")?.addEventListener("click", () => openCrewCard(row));
-  }
-
   function openCrewCard(row) {
     const distance = distanceFromMe(row);
     const map = window.FireWaterMap?.map;
     if (!map) return;
 
     const identity = crewIdentity(row);
-    const vehicle = vehicleForCrew(row);
-    const accuracy = Number.isFinite(Number(row.accuracy_m)) ? `±${Math.round(Number(row.accuracy_m))} m` : "—";
-    const crewLine = memberSummary(row);
-    const water = vehicle?.water_capacity_l != null ? `${vehicle.water_capacity_l} L` : "—";
+    const accuracy = Number.isFinite(Number(row.accuracy_m))
+      ? `±${Math.round(Number(row.accuracy_m))} m`
+      : "—";
 
     const html = `
       <div class="vehicle-sheet-heading">
-        <span class="vehicle-sheet-icon">${unitIcon(row)}</span>
-        <div><small>Όχημα επιχείρησης</small><h2>${escapeHtml(identity.vehicle)}</h2></div>
+        <span class="vehicle-sheet-icon">🚒</span>
+        <div>
+          <small>Όχημα επιχείρησης</small>
+          <h2>${escapeHtml(identity.vehicle)}</h2>
+        </div>
       </div>
-      <div class="vehicle-live-line ${crewClass(row)}"><span class="vehicle-live-dot"></span><strong>${escapeHtml(liveLine(row))}</strong></div>
+
+      <div class="vehicle-live-line ${crewClass(row)}">
+        <span class="vehicle-live-dot"></span>
+        <strong>${escapeHtml(liveLine(row))}</strong>
+      </div>
+
       ${distance ? `<p class="distance">📍 ${distance}</p>` : ""}
-      <div class="vehicle-quick-grid">
-        <div class="vehicle-info-card"><span>Ακρίβεια GPS</span><strong>${accuracy}</strong></div>
-        <div class="vehicle-info-card"><span>Δεξαμενή</span><strong>${escapeHtml(water)}</strong></div>
+
+      <div class="vehicle-info-card">
+        <span>Ακρίβεια GPS</span>
+        <strong>${accuracy}</strong>
       </div>
-      <div class="vehicle-crew-block"><span>Πλήρωμα</span><strong>${crewLine ? escapeHtml(crewLine) : "Δεν δηλώθηκαν μέλη"}</strong></div>
-      <div class="vehicle-sheet-actions">
-        <button class="navigate-button" type="button" data-inline-nav="${row.session_id}">🧭 Πλοήγηση</button>
-        <button class="action-button" type="button" data-vehicle-info="${row.session_id}">Πληροφορίες</button>
-      </div>`;
+
+      <div class="vehicle-crew-block">
+        <span>Πλήρωμα:</span>
+        <strong>${identity.members ? escapeHtml(identity.members) : "Δεν δηλώθηκαν ονόματα"}</strong>
+      </div>
+
+      <button class="navigate-button" type="button" data-inline-nav="${row.session_id}">
+        🧭 Πλοήγηση προς το όχημα
+      </button>
+    `;
 
     const sheet = document.getElementById("bottomSheet");
     const content = document.getElementById("sheetContent");
-    if (!sheet || !content) return;
     content.innerHTML = html;
     sheet.classList.add("open");
     sheet.setAttribute("aria-hidden", "false");
     content.querySelector("[data-inline-nav]")?.addEventListener("click", () => navigateToCrew(row.session_id));
-    content.querySelector("[data-vehicle-info]")?.addEventListener("click", () => openVehicleDetails(row));
   }
 
   function showCrewOnMap(sessionId) {
