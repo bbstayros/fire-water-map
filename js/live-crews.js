@@ -735,6 +735,22 @@
     content.querySelector("[data-back-vehicle-card]")?.addEventListener("click", () => openCrewCard(row));
   }
 
+
+  function vehicleSpeedLabel(row) {
+    const raw = Number(row?.speed_mps);
+    if (!Number.isFinite(raw) || raw < 0) return "—";
+
+    const kmh = raw * 3.6;
+
+    // Very low GPS speeds are usually position noise while stationary.
+    if (kmh < 2) return "Σταματημένο";
+
+    // Reject obviously bad GPS jumps.
+    if (kmh > 180) return "—";
+
+    return `${Math.round(kmh)} km/h`;
+  }
+
   function openCrewCard(row) {
     const distance = distanceFromMe(row);
     const map = window.FireWaterMap?.map;
@@ -755,6 +771,7 @@
       ${distance ? `<p class="distance">📍 ${distance}</p>` : ""}
       <div class="vehicle-quick-grid">
         <div class="vehicle-info-card"><span>Ακρίβεια GPS</span><strong>${accuracy}</strong></div>
+        <div class="vehicle-info-card"><span>Ταχύτητα</span><strong>${escapeHtml(vehicleSpeedLabel(row))}</strong></div>
         <div class="vehicle-info-card"><span>Δεξαμενή</span><strong>${escapeHtml(water)}</strong></div>
       </div>
       <div class="vehicle-crew-block"><span>Πλήρωμα</span><strong>${crewLine ? escapeHtml(crewLine) : "Δεν δηλώθηκαν μέλη"}</strong></div>
