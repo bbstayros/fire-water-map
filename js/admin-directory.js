@@ -5,24 +5,7 @@
   let profile=null, vehicles=[], members=[];
   const esc=v=>String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
   const $=id=>document.getElementById(id);
-  const vehicleIconType = v => {
-    const type = String(v?.vehicle_type || "").toLocaleLowerCase("el");
-    if (/πεζο/.test(type)) return "foot-team";
-    if (/αγροτικ|ημιφορτηγ|pickup|pick-up/.test(type)) return "pickup";
-    if (/υδροφόρ|βυτιοφόρ/.test(type)) return "tanker";
-    if (/πυροσβεσ|fire/.test(type)) return "fire-engine";
-    if (/4x4|4×4|τετρακίνη|suv/.test(type)) return "4x4";
-    if (/ιχ|επιβατικ|car/.test(type)) return "car";
-
-    const text = `${v?.display_name || ""} ${v?.make || ""} ${v?.model || ""}`.toLocaleLowerCase("el");
-    if (/πεζο|ομάδα|τμήμα/.test(text)) return "foot-team";
-    if (/αγροτικ|ημιφορτηγ|pickup|pick-up|l200|navara|hilux|ranger/.test(text)) return "pickup";
-    if (/υδροφόρ|βυτιοφόρ/.test(text)) return "tanker";
-    if (/πυροσβεσ|fire/.test(text)) return "fire-engine";
-    if (/4x4|4×4|τετρακίνη|suv/.test(text)) return "4x4";
-    if (/ιχ|επιβατικ|car/.test(text)) return "car";
-    return "car";
-  };
+  const vehicleIconType=v=>{const type=String(v?.vehicle_type||"").toLocaleLowerCase("el");if(/πεζο/.test(type))return"foot-team";if(/αγροτικ|ημιφορτηγ|pickup|pick-up/.test(type))return"pickup";if(/υδροφόρ|βυτιοφόρ|φορτηγ/.test(type))return"tanker";if(/πυροσβεσ/.test(type))return"fire-engine";if(/4x4|4×4|τετρακίνη|suv/.test(type))return"4x4";if(/ιχ|επιβατικ/.test(type))return"car";const s=`${v?.display_name||""} ${v?.make||""} ${v?.model||""}`.toLocaleLowerCase("el");if(/πεζο|ομάδα|τμήμα/.test(s))return"foot-team";if(/αγροτικ|ημιφορτηγ|pickup|pick-up|l200|navara|hilux|ranger/.test(s))return"pickup";if(/υδροφόρ|βυτιοφόρ/.test(s))return"tanker";if(/πυροσβεσ|fire/.test(s))return"fire-engine";if(/4x4|4×4|τετρακίνη|suv/.test(s))return"4x4";return"car";};
   const vehicleIcon=v=>`<img class="registry-vehicle-icon" src="icons/vehicles/${vehicleIconType(v)}.svg" alt="" aria-hidden="true">`;
 
   window.addEventListener("admin-dashboard-ready",e=>{profile=e.detail.profile;if(profile?.role==="admin"){loadVehicles();loadMembers();}});
@@ -32,6 +15,7 @@
     $("vehicleLiveTab").classList.toggle("hidden",button.dataset.vehicleTab!=="live");
     $("vehicleRegistryTab").classList.toggle("hidden",button.dataset.vehicleTab!=="registry");
     $("memberRegistryTab").classList.toggle("hidden",button.dataset.vehicleTab!=="members");
+    $("supportRegistryTab")?.classList.toggle("hidden",button.dataset.vehicleTab!=="support");
   }));
 
   async function loadVehicles(){const{data,error}=await ds.client.from("vehicle_registry").select("*").order("display_name");if(error){$("vehicleRegistryList").innerHTML=`<p class="form-message error">${esc(error.message)}</p>`;return;}vehicles=data||[];renderVehicles();}

@@ -55,8 +55,9 @@
       throw new Error("Ο λογαριασμός δεν είναι ενεργός.");
     }
 
-    if (!["viewer", "editor", "admin"].includes(profile.role)) {
-      throw new Error("Ο λογαριασμός δεν έχει δικαίωμα διαχείρισης.");
+    if (profile.role !== "admin") {
+      await dataService.signOut();
+      throw new Error("Το διαχειριστικό είναι διαθέσιμο μόνο στο Κέντρο / Διαχειριστή. Τα πληρώματα συνδέονται από τον δημόσιο χάρτη.");
     }
 
     state.user = user;
@@ -65,7 +66,7 @@
     document.getElementById("signedInUser").textContent =
       profile.full_name || user.email;
     document.getElementById("signedInRole").textContent =
-      profile.role === "admin" ? "Διαχειριστής" : profile.role === "editor" ? "Συντάκτης" : "Θεατής";
+      "Διαχειριστής";
 
     loginView.classList.add("hidden");
     dashboard.classList.remove("hidden");

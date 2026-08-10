@@ -217,6 +217,7 @@
           <button class="active" data-vehicle-tab="live" type="button">Live επιχειρήσεις</button>
           <button data-vehicle-tab="registry" type="button">Μητρώο οχημάτων</button>
           <button data-vehicle-tab="members" type="button">Μητρώο μελών</button>
+          <button data-vehicle-tab="support" type="button">Υποστήριξη <b id="supportPendingBadge" class="nav-badge hidden">0</b></button>
         </div>
 
         <div id="vehicleLiveTab" class="vehicle-tab-panel">
@@ -277,6 +278,14 @@
             <div class="panel"><div class="panel-heading responsive"><div><h2>Καταχωρημένα μέλη</h2><p>Γρήγορη επιλογή πληρώματος στην εφαρμογή.</p></div><button id="refreshMemberRegistry" class="action-button" type="button">↻ Ανανέωση</button></div><input id="memberRegistrySearch" class="admin-wide-search" type="search" placeholder="Αναζήτηση μέλους…"><div id="memberRegistryList" class="registry-list"></div></div>
           </div>
         </div>
+
+        <div id="supportRegistryTab" class="vehicle-tab-panel hidden">
+          <div class="panel">
+            <div class="panel-heading responsive"><div><h2>Αιτήματα Υποστήριξης</h2><p>Έγκριση προσωρινής πρόσβασης και σύνδεση με ενεργή επιχείρηση.</p></div><button id="refreshSupportRequests" class="action-button" type="button">↻ Ανανέωση</button></div>
+            <div class="table-tools"><input id="supportAdminSearch" type="search" placeholder="Αναζήτηση ονόματος, τηλεφώνου ή οχήματος…"><select id="supportAdminFilter"><option value="pending">Εκκρεμή</option><option value="approved">Εγκεκριμένα</option><option value="">Όλα</option><option value="rejected">Απορριφθέντα</option><option value="revoked">Ανακληθέντα</option></select></div>
+            <div id="supportRequestsList" class="support-admin-list"></div>
+          </div>
+        </div>
       </section>
 
       <section id="usersView" class="dashboard-section hidden">
@@ -322,6 +331,7 @@
   <script src="js/admin-submissions.js"></script>
   <script src="js/admin-live-crews.js"></script>
   <script src="js/admin-directory.js"></script>
+  <script src="js/admin-support-v35.js"></script>
   <script src="js/admin-users.js"></script>
   <script src="js/admin-audit.js"></script>
   <script src="js/admin-ui.js"></script>

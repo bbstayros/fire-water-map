@@ -61,6 +61,11 @@
   // OFF -> opens declaration form
   // ON  -> opens the active crew panel, where sharing can be stopped.
   operationToggle?.addEventListener("click", () => {
+    const mode = window.FWMAccess?.get?.()?.mode || "public";
+    if (!["crew","admin"].includes(mode)) {
+      $("menuCrewLoginButton")?.click();
+      return;
+    }
     originalCrewButton?.click();
   });
 

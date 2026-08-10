@@ -88,6 +88,8 @@
           </div>
           <div class="menu-action-list">
             <button id="menuSubmissionButton" class="menu-action" type="button"><span>＋</span><div><strong>Καταχώρηση σημείου</strong><small>Νέος κρουνός, δεξαμενή ή υδροληψία</small></div></button>
+            <button id="menuCrewLoginButton" class="menu-action" type="button"><span>👤</span><div><strong>Σύνδεση πληρώματος</strong><small>Πρόσβαση πληρώματος σε επιχειρησιακά δεδομένα</small></div></button>
+            <button id="menuSupportButton" class="menu-action" type="button"><span>◆</span><div><strong>Υποστήριξη επιχείρησης</strong><small>Προσωρινή πρόσβαση μετά από έγκριση του Κέντρου</small></div></button>
             <button id="menuInstallButton" class="menu-action install-menu-action hidden" type="button"><span>⬇️</span><div><strong>Εγκατάσταση εφαρμογής</strong><small>Προσθήκη στην αρχική οθόνη</small></div></button>
             <button id="menuHelpButton" class="menu-action" type="button"><span>ℹ️</span><div><strong>Βοήθεια / Offline πληροφορίες</strong><small>Τι λειτουργεί με και χωρίς σύνδεση</small></div></button>
           </div>
@@ -129,6 +131,7 @@
         <div id="map" aria-label="Χάρτης σημείων νερού"></div>
         <div class="map-counter" id="mapCounter">0 σημεία</div>
         <div class="connection-badge" id="dataBadge">Φόρτωση…</div>
+        <div id="accessBadge" class="access-badge public">Δημόσια πρόσβαση</div>
         <div class="offline-status" id="offlineStatus">Έλεγχος σύνδεσης…</div>
       </section>
 
@@ -173,6 +176,57 @@
             <button id="submitPublicPoint" class="action-button primary full" type="submit">Αποστολή για έλεγχο</button>
             <div id="submissionMessage" class="form-message" aria-live="polite"></div>
           </form>
+        </section>
+      </div>
+
+      <div id="crewLoginModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="crewLoginTitle">
+        <form id="crewLoginForm" class="compact-sheet-card access-login-card">
+          <button id="closeCrewLogin" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>
+          <div class="sheet-section-heading"><span>👤</span><div><h2 id="crewLoginTitle">Σύνδεση πληρώματος</h2><p>Για πρόσβαση στα επιχειρησιακά και κρυφά σημεία.</p></div></div>
+          <label>Email<input id="crewLoginEmail" type="email" required autocomplete="username"></label>
+          <label>Κωδικός<input id="crewLoginPassword" type="password" required autocomplete="current-password"></label>
+          <button class="action-button primary full" type="submit">Σύνδεση</button>
+          <div id="crewLoginMessage" class="form-message" aria-live="polite"></div>
+        </form>
+      </div>
+
+      <div id="supportRequestModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="supportRequestTitle">
+        <section class="compact-sheet-card support-request-card">
+          <button id="closeSupportRequest" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>
+          <div class="sheet-section-heading"><span>◆</span><div><h2 id="supportRequestTitle">Υποστήριξη επιχείρησης</h2><p>Στείλε αίτημα στο Κέντρο. Δεν χρειάζεται λογαριασμός.</p></div></div>
+          <form id="supportRequestForm" class="submission-form">
+            <label>Ονοματεπώνυμο *<input id="supportName" type="text" maxlength="100" required></label>
+            <label>Τηλέφωνο *<input id="supportPhone" type="tel" maxlength="30" required></label>
+            <label>Ιδιότητα *<select id="supportType" required><option value="">Επιλογή…</option><option>Υδροφόρα</option><option>Όχημα υποστήριξης</option><option>Εφοδιασμός</option><option>Μεταφορά προσωπικού</option><option>Μηχάνημα έργου</option><option>Συνεργαζόμενη ομάδα</option><option>Ιατρική / Υγειονομική υποστήριξη</option><option>Άλλο</option></select></label>
+            <label>Όχημα / Πινακίδα<input id="supportVehicle" type="text" maxlength="100" placeholder="π.χ. Volvo / ΙΧΡ-1234"></label>
+            <label>Σημειώσεις<textarea id="supportNotes" rows="3" maxlength="1000"></textarea></label>
+            <button id="submitSupportRequest" class="action-button primary full" type="submit">Αποστολή αιτήματος</button>
+            <div id="supportRequestMessage" class="form-message" aria-live="polite"></div>
+          </form>
+          <section id="supportWaitingPanel" class="support-waiting hidden">
+            <div class="support-state-icon">⌛</div><h3>Αναμονή έγκρισης</h3><p id="supportWaitingText">Το αίτημα έχει σταλεί στο Κέντρο.</p>
+            <button id="cancelSupportRequest" class="action-button ghost full" type="button">Ακύρωση αιτήματος</button>
+          </section>
+          <section id="supportApprovedPanel" class="support-approved hidden">
+            <div class="support-state-icon">✓</div><h3>Η πρόσβαση εγκρίθηκε</h3>
+            <p>Για όσο είναι ενεργή η πρόσβαση, η εφαρμογή κοινοποιεί αυτόματα τη θέση της μονάδας στο Κέντρο.</p>
+            <button id="activateSupportAccess" class="action-button primary full" type="button">Ενεργοποίηση πρόσβασης και GPS</button>
+          </section>
+        </section>
+      </div>
+
+      <div id="supportActiveBar" class="support-active-bar hidden" role="status">
+        <div><strong>◆ Υποστήριξη ενεργή</strong><small id="supportActiveLabel">Live GPS προς το Κέντρο</small></div>
+        <button id="openSupportStatus" type="button">Προβολή</button>
+      </div>
+
+      <div id="supportStatusModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="supportStatusTitle">
+        <section class="compact-sheet-card support-status-card">
+          <button id="closeSupportStatus" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>
+          <div class="sheet-section-heading"><span>◆</span><div><h2 id="supportStatusTitle">Πρόσβαση υποστήριξης</h2><p id="supportStatusSubtitle">Σύνδεση με το Κέντρο.</p></div></div>
+          <div class="support-live-grid"><div><span>GPS</span><strong id="supportGpsState">Αναμονή…</strong></div><div><span>Τελευταία αποστολή</span><strong id="supportLastSent">—</strong></div><div><span>Ακρίβεια</span><strong id="supportAccuracy">—</strong></div></div>
+          <div id="supportAssignment" class="support-assignment hidden"></div>
+          <p class="field-help">Η πρόσβαση λήγει ή ανακαλείται από το Κέντρο. Τα μηνύματα θα προστεθούν στη v3.6.</p>
         </section>
       </div>
 
@@ -253,6 +307,8 @@
   <script src="js/config.js"></script>
   <script src="js/offline-store.js"></script>
   <script src="js/data-service.js"></script>
+  <script src="js/access-v35.js"></script>
+  <script src="js/support-v35.js"></script>
   <script src="js/public-app.js"></script>
   <script src="js/public-submission.js"></script>
   <script src="js/live-crews.js"></script>

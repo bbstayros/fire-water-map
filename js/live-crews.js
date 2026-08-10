@@ -498,10 +498,18 @@
   }
 
   async function pollCrews() {
-    if (!state.code || !navigator.onLine) return;
+    if (!navigator.onLine) return;
+    const accessMode = window.FWMAccess?.get?.()?.mode || "public";
+    if (!state.code && !["crew","admin"].includes(accessMode)) return;
 
     try {
-      let rows; try { rows = await rpc("list_operation_crews_v2", { p_code: state.code }); } catch { rows = await rpc("list_operation_crews", { p_code: state.code }); }
+      let rows;
+      if (!state.code && ["crew","admin"].includes(accessMode)) {
+        rows = await rpc("list_all_active_crews_v35", {});
+        state.roomName = "Όλα τα ενεργά οχήματα";
+      } else {
+        try { rows = await rpc("list_operation_crews_v2", { p_code: state.code }); } catch { rows = await rpc("list_operation_crews", { p_code: state.code }); }
+      }
       state.crews = rows || [];
       renderCrewList();
       renderCrewMarkers();
@@ -520,6 +528,7 @@
 
   function vehicleForCrew(row) {
     if (row?.vehicle && typeof row.vehicle === "object") return row.vehicle;
+    if (row?.vehicle_type || row?.vehicle_display_name || row?.water_capacity_l != null) return { id: row.vehicle_id || null, display_name: row.vehicle_display_name || crewIdentity(row).vehicle, vehicle_type: row.vehicle_type || "", water_capacity_l: row.water_capacity_l, make: row.make, model: row.model, year: row.year, plate_number: row.plate_number, notes: row.vehicle_notes };
     if (row?.vehicle_id) {
       const byId = state.directory.vehicles.find(vehicle => String(vehicle.id) === String(row.vehicle_id));
       if (byId) return byId;
@@ -538,19 +547,13 @@
 
   function unitType(vehicleOrRow) {
     const vehicle = vehicleOrRow?.display_name !== undefined ? vehicleOrRow : vehicleForCrew(vehicleOrRow);
-
-    // Use the explicit vehicle type first. This avoids cases such as
-    // "Αγροτικό / Ημιφορτηγό" being detected as a tanker because
-    // "ημιφορτηγό" contains the substring "φορτηγ".
     const type = normalized(vehicle?.vehicle_type || "");
     if (/πεζο/.test(type)) return "foot-team";
     if (/αγροτικ|ημιφορτηγ|pickup|pick-up/.test(type)) return "pickup";
-    if (/υδροφόρ|βυτιοφόρ/.test(type)) return "tanker";
-    if (/πυροσβεσ|fire/.test(type)) return "fire-engine";
+    if (/υδροφόρ|βυτιοφόρ|φορτηγ/.test(type)) return "tanker";
+    if (/πυροσβεσ/.test(type)) return "fire-engine";
     if (/4x4|4×4|τετρακίνη|suv/.test(type)) return "4x4";
-    if (/ιχ|επιβατικ|car/.test(type)) return "car";
-
-    // Fallback for older records where vehicle_type may be missing.
+    if (/ιχ|επιβατικ/.test(type)) return "car";
     const text = normalized(`${vehicle?.display_name || vehicleOrRow?.vehicle_name || ""} ${vehicle?.make || ""} ${vehicle?.model || ""}`);
     if (/πεζο|ομάδα|τμήμα/.test(text)) return "foot-team";
     if (/αγροτικ|ημιφορτηγ|pickup|pick-up|l200|navara|hilux|ranger/.test(text)) return "pickup";
@@ -735,21 +738,7 @@
     content.querySelector("[data-back-vehicle-card]")?.addEventListener("click", () => openCrewCard(row));
   }
 
-
-  function vehicleSpeedLabel(row) {
-    const raw = Number(row?.speed_mps);
-    if (!Number.isFinite(raw) || raw < 0) return "—";
-
-    const kmh = raw * 3.6;
-
-    // Very low GPS speeds are usually position noise while stationary.
-    if (kmh < 2) return "Σταματημένο";
-
-    // Reject obviously bad GPS jumps.
-    if (kmh > 180) return "—";
-
-    return `${Math.round(kmh)} km/h`;
-  }
+  function vehicleSpeedLabel(row) { const raw=Number(row?.speed_mps); if(!Number.isFinite(raw)||raw<0)return "—"; const kmh=raw*3.6; if(kmh<2)return "Σταματημένο"; if(kmh>180)return "—"; return `${Math.round(kmh)} km/h`; }
 
   function openCrewCard(row) {
     const distance = distanceFromMe(row);
@@ -849,6 +838,12 @@
   ui.watchOnly.addEventListener("click", watchOnly);
   ui.stop.addEventListener("click", () => stopSharing(true));
   ui.refresh.addEventListener("click", pollCrews);
+  // v35-crew-access-poll: Editors/Admins automatically see all currently active units.
+  window.addEventListener("fwm-access-changed", event => {
+    const mode = event.detail?.mode || "public";
+    if (["crew","admin"].includes(mode)) { startTimers(); pollCrews(); }
+    else if (!state.sharing && !state.code) { state.crews=[]; renderCrewMarkers(); renderCrewList(); }
+  });
 
   window.addEventListener("online", () => {
     ui.activeConnection.textContent = "Online";

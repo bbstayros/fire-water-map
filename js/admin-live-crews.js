@@ -52,11 +52,16 @@
 
     if (crewError) console.warn(crewError);
     const crewRows = crews || [];
+    const { data: supportRowsRaw, error: supportError } = await ds.client.from("support_requests_v35").select("id,room_id,full_name,phone,support_type,vehicle_info,latitude,longitude,accuracy_m,speed_mps,last_seen_at,status").eq("status","approved").order("last_seen_at",{ascending:false});
+    if (supportError) console.warn(supportError);
+    const supportRows = supportRowsRaw || [];
 
     list.innerHTML = (rooms || []).length
       ? rooms.map(room => {
           const roomCrews = crewRows.filter(row => row.room_id === room.id);
+          const roomSupport = supportRows.filter(row => row.room_id === room.id);
           const activeCrewCount = roomCrews.filter(row => row.is_sharing && Date.now() - new Date(row.last_seen_at).getTime() < 5*60*1000).length;
+          const activeSupportCount = roomSupport.filter(row => row.last_seen_at && Date.now() - new Date(row.last_seen_at).getTime() < 5*60*1000).length;
           const expiry = room.expires_at ? new Date(room.expires_at).toLocaleString("el-GR") : "Χωρίς αυτόματη λήξη";
           const vehicles = roomCrews.length ? `<div class="admin-vehicle-list">${roomCrews.map(row => {
             const identity=crewIdentity(row.vehicle_name), status=ageState(row.last_seen_at,row.is_sharing);
@@ -74,9 +79,10 @@
           return `<article class="operation-room-card ${room.is_active ? "" : "inactive"}">
             <div class="operation-room-card-head">
               <div><div class="operation-title-row"><h3>${escapeHtml(room.name)}</h3><span class="publication-status ${room.is_active ? "published" : "hidden"}">${room.is_active ? "Ανοιχτή επιχείρηση" : "Κλειστή επιχείρηση"}</span></div><small>Κωδικός …${escapeHtml(room.code_hint)} · ${escapeHtml(expiry)}</small></div>
-              <div class="operation-count ${activeCrewCount?"has-live":"no-live"}"><strong>${activeCrewCount}</strong><span>${activeCrewCount===1?"όχημα μεταδίδει":"οχήματα μεταδίδουν"}</span></div>
+              <div class="operation-count ${(activeCrewCount+activeSupportCount)?"has-live":"no-live"}"><strong>${activeCrewCount+activeSupportCount}</strong><span>μονάδες μεταδίδουν</span></div>
             </div>
             ${vehicles}
+            ${roomSupport.length ? `<div class="admin-support-live"><h4>Υποστήριξη</h4>${roomSupport.map(s=>{const live=s.last_seen_at&&Date.now()-new Date(s.last_seen_at).getTime()<120000;const speed=s.speed_mps!=null?`${Math.round(Number(s.speed_mps)*3.6)} km/h`:"—";return `<article class="admin-vehicle-card ${live?"live":"offline"}"><div class="admin-vehicle-icon">◆</div><div class="admin-vehicle-copy"><div class="admin-vehicle-title"><strong>${escapeHtml(s.full_name)}</strong><span>${live?"Live":"Χωρίς πρόσφατο GPS"}</span></div><div class="admin-vehicle-meta"><span>${escapeHtml(s.support_type)}</span><span>${escapeHtml(s.vehicle_info||"")}</span><span>${speed}</span></div></div></article>`;}).join("")}</div>` : ""}
             <div class="operation-footer">
               ${room.is_active
                 ? `<button class="action-button danger-button" type="button" data-close-room="${room.id}">Κλείσιμο</button>`

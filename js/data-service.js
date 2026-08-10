@@ -92,6 +92,49 @@
     }
   }
 
+  async function currentAccess() {
+    if (!client) return { mode: "public", user: null, profile: null };
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      if (!session?.user) return { mode: "public", user: null, profile: null };
+      const { data: profile, error } = await client.from("profiles").select("id,full_name,role,is_active").eq("id", session.user.id).maybeSingle();
+      if (error || !profile?.is_active || !["admin","editor"].includes(profile.role)) return { mode: "public", user: session.user, profile: profile || null };
+      return { mode: profile.role === "admin" ? "admin" : "crew", user: session.user, profile };
+    } catch {
+      return { mode: "public", user: null, profile: null };
+    }
+  }
+
+  async function mapPoints() {
+    const access = await currentAccess();
+    if (access.mode === "public") return publicPoints();
+    requireClient();
+    try {
+      const { data, error } = await client.from("water_points").select("*").in("publication_status", ["published","hidden"]).order("name", { ascending: true });
+      if (error) throw error;
+      return { points: (data || []).map(normalise), source: "supabase", access };
+    } catch (error) {
+      const fallback = await publicPoints();
+      return { ...fallback, access: { mode: "public", user: access.user, profile: access.profile }, accessError: error.message };
+    }
+  }
+
+  async function submitOperationalPoint(point) {
+    requireClient();
+    const { data, error } = await client.rpc("submit_editor_water_point_v35", {
+      p_name: point.name,
+      p_category: point.category,
+      p_condition: point.condition,
+      p_notes: point.notes || null,
+      p_latitude: Number(point.latitude),
+      p_longitude: Number(point.longitude),
+      p_accuracy_m: Number(point.accuracy_m || 0),
+      p_captured_at: point.captured_at || new Date().toISOString()
+    });
+    if (error) throw error;
+    return data;
+  }
+
   async function getSession() {
     requireClient();
     const { data, error } = await client.auth.getSession();
@@ -233,6 +276,9 @@
     configured,
     client,
     publicPoints,
+    currentAccess,
+    mapPoints,
+    submitOperationalPoint,
     getSession,
     signIn,
     signOut,
