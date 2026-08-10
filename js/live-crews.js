@@ -538,14 +538,27 @@
 
   function unitType(vehicleOrRow) {
     const vehicle = vehicleOrRow?.display_name !== undefined ? vehicleOrRow : vehicleForCrew(vehicleOrRow);
-    const text = normalized(`${vehicle?.vehicle_type || ""} ${vehicle?.display_name || vehicleOrRow?.vehicle_name || ""}`);
+
+    // Use the explicit vehicle type first. This avoids cases such as
+    // "Αγροτικό / Ημιφορτηγό" being detected as a tanker because
+    // "ημιφορτηγό" contains the substring "φορτηγ".
+    const type = normalized(vehicle?.vehicle_type || "");
+    if (/πεζο/.test(type)) return "foot-team";
+    if (/αγροτικ|ημιφορτηγ|pickup|pick-up/.test(type)) return "pickup";
+    if (/υδροφόρ|βυτιοφόρ/.test(type)) return "tanker";
+    if (/πυροσβεσ|fire/.test(type)) return "fire-engine";
+    if (/4x4|4×4|τετρακίνη|suv/.test(type)) return "4x4";
+    if (/ιχ|επιβατικ|car/.test(type)) return "car";
+
+    // Fallback for older records where vehicle_type may be missing.
+    const text = normalized(`${vehicle?.display_name || vehicleOrRow?.vehicle_name || ""} ${vehicle?.make || ""} ${vehicle?.model || ""}`);
     if (/πεζο|ομάδα|τμήμα/.test(text)) return "foot-team";
-    if (/υδροφόρ|βυτιοφόρ|φορτηγ/.test(text)) return "tanker";
+    if (/αγροτικ|ημιφορτηγ|pickup|pick-up|l200|navara|hilux|ranger/.test(text)) return "pickup";
+    if (/υδροφόρ|βυτιοφόρ/.test(text)) return "tanker";
     if (/πυροσβεσ|fire/.test(text)) return "fire-engine";
     if (/4x4|4×4|τετρακίνη|suv/.test(text)) return "4x4";
-    if (/αγροτικ|ημιφορτηγ|pickup|pick-up|l200|navara|hilux|ranger/.test(text)) return "pickup";
     if (/ιχ|επιβατικ|car/.test(text)) return "car";
-    return "fire-engine";
+    return "car";
   }
 
   function unitIconUrl(vehicleOrRow) {

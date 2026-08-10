@@ -5,7 +5,24 @@
   let profile=null, vehicles=[], members=[];
   const esc=v=>String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
   const $=id=>document.getElementById(id);
-  const vehicleIconType=v=>{const t=`${v?.vehicle_type||""} ${v?.display_name||""} ${v?.make||""} ${v?.model||""}`.toLocaleLowerCase("el");if(/πεζο|ομάδα|τμήμα/.test(t))return"foot-team";if(/υδροφόρ|βυτιοφόρ|φορτηγ/.test(t))return"tanker";if(/πυροσβεσ|fire/.test(t))return"fire-engine";if(/4x4|4×4|τετρακίνη|suv/.test(t))return"4x4";if(/αγροτικ|ημιφορτηγ|pickup|pick-up|l200|navara|hilux|ranger/.test(t))return"pickup";if(/ιχ|επιβατικ|car/.test(t))return"car";return"fire-engine";};
+  const vehicleIconType = v => {
+    const type = String(v?.vehicle_type || "").toLocaleLowerCase("el");
+    if (/πεζο/.test(type)) return "foot-team";
+    if (/αγροτικ|ημιφορτηγ|pickup|pick-up/.test(type)) return "pickup";
+    if (/υδροφόρ|βυτιοφόρ/.test(type)) return "tanker";
+    if (/πυροσβεσ|fire/.test(type)) return "fire-engine";
+    if (/4x4|4×4|τετρακίνη|suv/.test(type)) return "4x4";
+    if (/ιχ|επιβατικ|car/.test(type)) return "car";
+
+    const text = `${v?.display_name || ""} ${v?.make || ""} ${v?.model || ""}`.toLocaleLowerCase("el");
+    if (/πεζο|ομάδα|τμήμα/.test(text)) return "foot-team";
+    if (/αγροτικ|ημιφορτηγ|pickup|pick-up|l200|navara|hilux|ranger/.test(text)) return "pickup";
+    if (/υδροφόρ|βυτιοφόρ/.test(text)) return "tanker";
+    if (/πυροσβεσ|fire/.test(text)) return "fire-engine";
+    if (/4x4|4×4|τετρακίνη|suv/.test(text)) return "4x4";
+    if (/ιχ|επιβατικ|car/.test(text)) return "car";
+    return "car";
+  };
   const vehicleIcon=v=>`<img class="registry-vehicle-icon" src="icons/vehicles/${vehicleIconType(v)}.svg" alt="" aria-hidden="true">`;
 
   window.addEventListener("admin-dashboard-ready",e=>{profile=e.detail.profile;if(profile?.role==="admin"){loadVehicles();loadMembers();}});
