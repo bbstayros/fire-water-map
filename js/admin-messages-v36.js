@@ -1,343 +1,195 @@
 (() => {
   "use strict";
+  const ds=window.DataService;
+  if(!ds?.client || !document.getElementById("messagesView")) return;
+  const $=id=>document.getElementById(id);
+  const esc=v=>String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
+  const rpc=async(n,p)=>{const{data,error}=await ds.client.rpc(n,p);if(error)throw error;return data;};
 
-  const ds = window.DataService;
-  const $ = id => document.getElementById(id);
-  if (!ds?.client || !$("messagesView")) return;
+  const state={peers:[],threads:[],activeConversation:null,pointAttachment:null,points:[],pickerMap:null,pickerMarker:null};
 
-
-  const patchStyle=document.createElement("style");
-  patchStyle.textContent=`
-    .fwm-point-picker-map{height:260px;border-radius:16px;overflow:hidden;margin:.5rem 0 1rem}
-    .fwm-admin-attachment-tools{display:grid;gap:.65rem;margin:.65rem 0}
-    .fwm-coords-wrap{display:grid;gap:.55rem}
-    .fwm-attachment-summary{padding:.7rem .85rem;border:1px solid #dfe5e8;border-radius:12px;background:#f8fafb;font-size:.92rem}
-    .fwm-map-picker-help{font-size:.9rem;color:#66727c}
+  const style=document.createElement("style");
+  style.textContent=`
+    .v37-admin-grid{display:grid;grid-template-columns:minmax(330px,430px) 1fr;gap:18px}
+    .v37-admin-panel{background:white;border-radius:22px;padding:18px}
+    .v37-admin-compose{display:grid;gap:10px}
+    .v37-admin-compose label{display:grid;gap:5px;font-weight:700}
+    .v37-admin-compose select,.v37-admin-compose textarea,.v37-admin-compose input{width:100%;padding:11px;border:1px solid #d9e0e4;border-radius:13px;font:inherit}
+    .v37-admin-send{border:0;border-radius:13px;padding:12px;background:#981b16;color:#fff;font-weight:800}
+    .v37-admin-thread{display:block;width:100%;text-align:left;border:1px solid #e0e5e8;border-radius:15px;background:#fff;padding:11px 13px;margin:7px 0}
+    .v37-admin-thread p{margin:.3rem 0 0;color:#68747d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .v37-admin-thread-top{display:flex;justify-content:space-between;gap:10px}
+    .v37-admin-unread{background:#981b16;color:#fff;border-radius:999px;padding:2px 8px;font-size:12px}
+    .v37-admin-chat{display:flex;flex-direction:column;gap:8px}
+    .v37-admin-bubble{max-width:82%;padding:10px 12px;border-radius:15px;background:#f2f4f5}
+    .v37-admin-bubble.mine{align-self:flex-end;background:#e9f5ee}
+    .v37-admin-bubble.urgent{outline:2px solid #d04a3a}
+    .v37-admin-map{height:230px;border-radius:14px;overflow:hidden}
+    .v37-admin-point-summary{padding:9px 11px;background:#f6f8f9;border:1px solid #e0e5e8;border-radius:12px}
+    .v37-admin-readonly{padding:9px 12px;background:#fff4d9;border-radius:12px;margin-bottom:8px}
+    @media(max-width:1000px){.v37-admin-grid{grid-template-columns:1fr}}
   `;
-  document.head.appendChild(patchStyle);
+  document.head.appendChild(style);
 
-  const esc = v => String(v ?? "").replace(/[&<>'"]/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"
-  }[c]));
-
-  let rooms = [], targets = {crews:[], support:[]}, rows = [], points = [];
-  let pointAttachment = null, pickerMap = null, pickerMarker = null;
-
-  const rpc = async (n,p) => {
-    const {data,error} = await ds.client.rpc(n,p);
-    if(error) throw error;
-    return data;
-  };
-
-  window.addEventListener("admin-dashboard-ready", () => init());
-  document.querySelector('[data-view="messages"]')?.addEventListener("click", () => init());
-  $("adminMessageRoom")?.addEventListener("change", () => loadRoom());
-  $("adminMessageRefresh")?.addEventListener("click", () => loadRoom());
-  $("adminMessageForm")?.addEventListener("submit", send);
-
-  function ensureAttachmentUi(){
-    const select = $("adminMessagePoint");
-    if (!select || $("fwmAdminPointMode")) return;
-
-    const wrap = document.createElement("div");
-    wrap.className = "fwm-admin-attachment-tools";
-    wrap.innerHTML = `
-      <label>Τρόπος σημείου
-        <select id="fwmAdminPointMode">
-          <option value="none">Χωρίς σημείο</option>
-          <option value="registered">Από καταχώρηση</option>
-          <option value="coords">Επικόλληση συντεταγμένων</option>
-          <option value="map">Επιλογή από χάρτη</option>
-        </select>
-      </label>
-
-      <div id="fwmAdminRegisteredWrap" class="hidden"></div>
-
-      <div id="fwmAdminCoordsWrap" class="hidden fwm-coords-wrap">
-        <label>Συντεταγμένες
-          <input id="fwmAdminCoords" type="text" placeholder="π.χ. 37.9755, 22.9773">
-        </label>
-        <label>Ονομασία σημείου
-          <input id="fwmAdminPointName" type="text" placeholder="π.χ. Σημείο συνάντησης Α">
-        </label>
-        <button id="fwmAdminUseCoords" class="action-button" type="button">✓ Χρήση συντεταγμένων</button>
-      </div>
-
-      <div id="fwmAdminMapWrap" class="hidden">
-        <div class="fwm-map-picker-help">Πάτησε στον χάρτη για να ορίσεις προσωρινό σημείο.</div>
-        <div id="fwmAdminPointMap" class="fwm-point-picker-map"></div>
-        <label>Ονομασία σημείου
-          <input id="fwmAdminMapPointName" type="text" placeholder="π.χ. Είσοδος από χωματόδρομο">
-        </label>
-      </div>
-
-      <div id="fwmAdminAttachmentSummary" class="fwm-attachment-summary">Χωρίς σημείο χάρτη</div>`;
-
-    select.parentElement?.insertAdjacentElement("beforebegin", wrap);
-    $("fwmAdminRegisteredWrap").appendChild(select);
-    select.closest("label")?.classList.add("fwm-registered-label");
-
-    $("fwmAdminPointMode").addEventListener("change", renderAttachmentMode);
-    $("fwmAdminUseCoords").addEventListener("click", useCoordinates);
-    select.addEventListener("change", () => {
-      if ($("fwmAdminPointMode").value !== "registered") return;
-      const p = points.find(x => x.id === select.value);
-      pointAttachment = p ? {id:p.id,name:p.name,latitude:p.latitude,longitude:p.longitude} : null;
-      renderAttachmentSummary();
-    });
-    renderAttachmentMode();
+  function build(){
+    const view=$("messagesView");
+    view.innerHTML=`
+      <div class="v37-admin-grid">
+        <section class="v37-admin-panel">
+          <h2>Νέο μήνυμα</h2>
+          <p>Αποστολή απευθείας σε συγκεκριμένο ενεργό όχημα.</p>
+          <div id="v37AdminNotice"></div>
+          <form id="v37AdminCompose" class="v37-admin-compose">
+            <label>Προς<select id="v37AdminRecipient"></select></label>
+            <label>Τύπος<select id="v37AdminPriority"><option value="normal">Απλό</option><option value="urgent">🚨 Επείγον</option></select></label>
+            <label>Μήνυμα<textarea id="v37AdminBody" rows="4" maxlength="1000" required></textarea></label>
+            <label>Σημείο χάρτη
+              <select id="v37AdminPointMode">
+                <option value="none">Χωρίς σημείο</option>
+                <option value="registered">Από καταχώρηση</option>
+                <option value="coords">Επικόλληση συντεταγμένων</option>
+                <option value="map">Επιλογή από χάρτη</option>
+              </select>
+            </label>
+            <div id="v37AdminRegisteredWrap" class="hidden"><select id="v37AdminRegistered"></select></div>
+            <div id="v37AdminCoordsWrap" class="hidden"><input id="v37AdminCoords" placeholder="37.9755, 22.9773"><input id="v37AdminCoordsName" placeholder="Ονομασία"><button id="v37AdminUseCoords" type="button">Χρήση</button></div>
+            <div id="v37AdminMapWrap" class="hidden"><div id="v37AdminMap" class="v37-admin-map"></div><input id="v37AdminMapName" placeholder="Ονομασία προσωρινού σημείου"></div>
+            <div id="v37AdminPointSummary" class="v37-admin-point-summary">Χωρίς σημείο χάρτη</div>
+            <button class="v37-admin-send" type="submit">Αποστολή</button>
+          </form>
+        </section>
+        <section class="v37-admin-panel">
+          <div style="display:flex;justify-content:space-between;gap:10px"><div><h2>Ιστορικό συνομιλιών</h2><p>Ομαδοποίηση ανά ζευγάρι αποστολής.</p></div><button id="v37AdminRefresh" type="button">↻</button></div>
+          <div id="v37AdminThreads"></div>
+          <div id="v37AdminChatWrap" class="hidden">
+            <button id="v37AdminBack" type="button">← Συνομιλίες</button>
+            <h3 id="v37AdminChatTitle"></h3>
+            <div id="v37AdminReadonly" class="v37-admin-readonly hidden">Η συνομιλία είναι μεταξύ δύο πληρωμάτων. Το Κέντρο τη βλέπει ως ιστορικό αλλά δεν απαντά μέσα σε αυτή.</div>
+            <div id="v37AdminChat" class="v37-admin-chat"></div>
+          </div>
+        </section>
+      </div>`;
+    $("v37AdminCompose").onsubmit=send;
+    $("v37AdminRefresh").onclick=loadThreads;
+    $("v37AdminBack").onclick=()=>{state.activeConversation=null;renderThreads();};
+    $("v37AdminPointMode").onchange=renderPointMode;
+    $("v37AdminUseCoords").onclick=useCoords;
+    $("v37AdminRegistered").onchange=useRegistered;
+    $("v37AdminMapName").oninput=()=>{if(state.pointAttachment){state.pointAttachment.name=$("v37AdminMapName").value.trim()||"Προσωρινό σημείο";renderPointSummary();}};
   }
 
-  function renderAttachmentMode(){
-    const mode = $("fwmAdminPointMode")?.value || "none";
-    $("fwmAdminRegisteredWrap")?.classList.toggle("hidden", mode !== "registered");
-    $("fwmAdminCoordsWrap")?.classList.toggle("hidden", mode !== "coords");
-    $("fwmAdminMapWrap")?.classList.toggle("hidden", mode !== "map");
-    if(mode === "none"){
-      pointAttachment = null;
-      if($("adminMessagePoint")) $("adminMessagePoint").value = "";
-      renderAttachmentSummary();
-    } else if(mode === "map"){
-      setTimeout(initPickerMap, 50);
-    }
-  }
-
-  function parseCoords(value){
-    const match = String(value || "").trim().match(/^\s*(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)\s*$/);
-    if(!match) return null;
-    const lat = Number(match[1]), lng = Number(match[2]);
-    if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat > 90||lng < -180||lng > 180) return null;
-    return {latitude:lat,longitude:lng};
-  }
-
-  function useCoordinates(){
-    const parsed = parseCoords($("fwmAdminCoords")?.value);
-    if(!parsed){ notice("Οι συντεταγμένες δεν είναι έγκυρες. Χρησιμοποίησε μορφή: 37.9755, 22.9773", true); return; }
-    pointAttachment = {
-      ...parsed,
-      id:null,
-      name:$("fwmAdminPointName")?.value.trim() || "Προσωρινό σημείο"
-    };
-    notice("");
-    renderAttachmentSummary();
-  }
-
-  function initPickerMap(){
-    if(!window.L || !$("fwmAdminPointMap")) return;
-    if(pickerMap){ setTimeout(()=>pickerMap.invalidateSize(), 30); return; }
-
-    pickerMap = L.map("fwmAdminPointMap").setView([37.95, 22.98], 10);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
-      maxZoom:19,
-      attribution:"&copy; OpenStreetMap"
-    }).addTo(pickerMap);
-
-    pickerMap.on("click", e => {
-      if(pickerMarker) pickerMarker.setLatLng(e.latlng);
-      else pickerMarker = L.marker(e.latlng).addTo(pickerMap);
-      pointAttachment = {
-        id:null,
-        name:$("fwmAdminMapPointName")?.value.trim() || "Προσωρινό σημείο",
-        latitude:e.latlng.lat,
-        longitude:e.latlng.lng
-      };
-      renderAttachmentSummary();
-    });
-    $("fwmAdminMapPointName")?.addEventListener("input", () => {
-      if(pointAttachment && $("fwmAdminPointMode").value === "map"){
-        pointAttachment.name = $("fwmAdminMapPointName").value.trim() || "Προσωρινό σημείο";
-        renderAttachmentSummary();
-      }
-    });
-  }
-
-  function renderAttachmentSummary(){
-    const box = $("fwmAdminAttachmentSummary");
-    if(!box) return;
-    box.textContent = pointAttachment
-      ? `📍 ${pointAttachment.name} · ${Number(pointAttachment.latitude).toFixed(5)}, ${Number(pointAttachment.longitude).toFixed(5)}`
-      : "Χωρίς σημείο χάρτη";
-  }
-
+  function notice(t,e=false){const n=$("v37AdminNotice");n.textContent=t||"";n.style.color=e?"#b42318":"";}
   async function init(){
-    ensureAttachmentUi();
+    if(!$("v37AdminCompose")) build();
     try{
-      // Room list via RPC; fallback to direct table so the UI remains usable.
-      try {
-        rooms = await rpc("message_rooms_center_v36", {}) || [];
-      } catch {
-        const {data,error} = await ds.client.from("operation_rooms")
-          .select("id,name,is_active,created_at").order("is_active",{ascending:false}).order("created_at",{ascending:false});
-        if(error) throw error;
-        rooms = data || [];
-      }
-
-      const sel = $("adminMessageRoom"), old = sel.value;
-      sel.innerHTML = rooms.map(r=>`<option value="${r.id}">${r.is_active?'●':'○'} ${esc(r.name)}</option>`).join("");
-      if(old && rooms.some(r=>r.id===old)) sel.value=old;
-      else if(rooms[0]) sel.value=rooms[0].id;
-
-      const {data:pdata} = await ds.client.from("water_points")
-        .select("id,name,latitude,longitude")
-        .in("publication_status",["published","hidden"]).order("name");
-      points = pdata || [];
-      renderPoints();
-      await loadRoom();
-    }catch(e){
-      notice(e.message || "Δεν είναι διαθέσιμα τα μηνύματα.", true);
-    }
+      const [peers,threads]=await Promise.all([
+        rpc("center_peers_v37",{}),
+        rpc("center_threads_v37",{})
+      ]);
+      state.peers=peers||[];state.threads=threads||[];
+      renderPeers();renderThreads();loadPoints();
+    }catch(e){notice(e.message,true);}
   }
-
-  function renderPoints(){
-    const s=$("adminMessagePoint");
-    if(!s) return;
-    s.innerHTML='<option value="">Επίλεξε καταχωρημένο σημείο</option>'+
-      points.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+  function renderPeers(){
+    $("v37AdminRecipient").innerHTML=state.peers.length?
+      state.peers.map(p=>`<option value="${p.session_id}">🚒 ${esc(p.vehicle_name||"Πλήρωμα")}</option>`).join(""):
+      '<option value="">Δεν υπάρχουν ενεργά οχήματα</option>';
   }
-
-  async function directTargets(room){
-    const out={crews:[],support:[]};
-
-    const crewRes = await ds.client.from("crew_positions")
-      .select("session_id,vehicle_name,crew_members_text,room_id,is_sharing,last_seen_at")
-      .eq("room_id",room)
-      .order("last_seen_at",{ascending:false});
-    if(!crewRes.error){
-      const seen=new Set();
-      out.crews=(crewRes.data||[]).filter(x=>{
-        if(!x.session_id || seen.has(x.session_id)) return false;
-        seen.add(x.session_id); return true;
-      }).map(x=>({
-        session_id:x.session_id,
-        label:[x.vehicle_name,x.crew_members_text].filter(Boolean).join(" · ") || "Πλήρωμα"
-      }));
-    }
-
-    const supRes = await ds.client.from("support_requests_v35")
-      .select("id,full_name,support_type,vehicle_info,room_id,status")
-      .eq("room_id",room).eq("status","approved");
-    if(!supRes.error){
-      out.support=(supRes.data||[]).map(x=>({
-        id:x.id,
-        label:[x.full_name,x.support_type,x.vehicle_info].filter(Boolean).join(" · ")
-      }));
-    }
-    return out;
+  async function loadThreads(){
+    try{state.threads=await rpc("center_threads_v37",{})||[];renderThreads();}catch(e){notice(e.message,true);}
   }
-
-  async function loadRoom(){
-    const room=$("adminMessageRoom").value;
-    if(!room) return;
-
-    notice("");
-    // IMPORTANT: recipients are loaded independently from message history.
-    // One broken RPC must not empty the "Προς" field.
+  function pairLabel(t){return `${t.endpoint_a_label} ↔ ${t.endpoint_b_label}`;}
+  function renderThreads(){
+    const box=$("v37AdminThreads");
+    $("v37AdminChatWrap").classList.add("hidden");box.classList.remove("hidden");
+    box.innerHTML=state.threads.length?state.threads.map(t=>`
+      <button class="v37-admin-thread" data-thread="${t.conversation_id}" type="button">
+        <div class="v37-admin-thread-top"><strong>${esc(pairLabel(t))}</strong>${Number(t.unread_count)>0?`<span class="v37-admin-unread">${t.unread_count}</span>`:""}</div>
+        <p>${esc(t.last_message||"")}</p>
+      </button>`).join(""):'<p>Δεν υπάρχουν ακόμη συνομιλίες.</p>';
+    box.querySelectorAll("[data-thread]").forEach(b=>b.onclick=()=>openThread(b.dataset.thread));
+  }
+  async function openThread(id){
+    const t=state.threads.find(x=>x.conversation_id===id);state.activeConversation=id;
+    $("v37AdminThreads").classList.add("hidden");$("v37AdminChatWrap").classList.remove("hidden");
+    $("v37AdminChatTitle").textContent=t?pairLabel(t):"Συνομιλία";
+    const centerParticipant=t && (
+      (t.endpoint_a_type==="center"&&t.endpoint_a_id==="main") ||
+      (t.endpoint_b_type==="center"&&t.endpoint_b_id==="main")
+    );
+    $("v37AdminReadonly").classList.toggle("hidden",!!centerParticipant);
     try{
-      targets = await directTargets(room);
-      renderTargets();
-    }catch(e){
-      targets={crews:[],support:[]};
-      renderTargets();
-      notice("Δεν ήταν δυνατή η φόρτωση παραληπτών: "+(e.message||e),true);
-    }
-
-    try{
-      rows = await rpc("list_messages_center_v36",{p_room_id:room,p_limit:150}) || [];
-      render();
-      for(const m of rows.filter(x=>x.sender_type!=="center").slice(0,40)){
-        rpc("mark_message_center_v36",{p_message_id:m.id,p_ack:false}).catch(()=>{});
-      }
-    }catch(e){
-      rows=[];
-      render();
-      // Keep recipient UI working even if the history RPC still needs SQL repair.
-      notice(`Ιστορικό μηνυμάτων: ${e.message||e}`, true);
-    }
+      const rows=await rpc("center_thread_messages_v37",{p_conversation_id:id,p_limit:200})||[];
+      $("v37AdminChat").innerHTML=rows.map(m=>bubble(m)).join("");
+      $("v37AdminChat").querySelectorAll("[data-ack]").forEach(b=>b.onclick=()=>ack(b.dataset.ack));
+    }catch(e){notice(e.message,true);}
   }
-
-  function renderTargets(){
-    const s=$("adminMessageRecipient"),old=s.value;
-    const crewOptions=(targets.crews||[]).map(x=>
-      `<option value="crew:${x.session_id}">🚒 ${esc(String(x.label||"Όχημα").split(" · ")[0])}</option>`
-    ).join("");
-    const supportOptions=(targets.support||[]).map(x=>
-      `<option value="support:${x.id}">◆ ${esc(x.label||"Υποστήριξη")}</option>`
-    ).join("");
-
-    s.innerHTML =
-      '<option value="all_crews">📣 Όλα τα πληρώματα</option>'+
-      crewOptions+supportOptions;
-
-    if([...s.options].some(o=>o.value===old)) s.value=old;
+  function bubble(m){
+    const mine=m.sender_type==="center";
+    const nav=m.latitude!=null&&m.longitude!=null?`<a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${m.latitude},${m.longitude}">📍 ${esc(m.point_name||"Πλοήγηση")}</a>`:"";
+    const ack=m.priority==="urgent"&&!mine&&!m.acknowledged_at?`<button data-ack="${m.id}" type="button">✓ Επιβεβαίωση λήψης</button>`:"";
+    return `<article class="v37-admin-bubble ${mine?"mine":""} ${m.priority==="urgent"?"urgent":""}"><strong>${esc(m.sender_label)}</strong><div>${esc(m.body)}</div>${nav}${ack}<small>${new Date(m.created_at).toLocaleString("el-GR")}${m.acknowledged_at?" · ✓ Επιβεβαιώθηκε":""}</small></article>`;
   }
-
-  function time(v){return new Date(v).toLocaleString("el-GR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});}
-  function nav(m){return m.latitude!=null&&m.longitude!=null?`<a class="fwm-message-map" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${m.latitude},${m.longitude}">📍 ${esc(m.point_name||"Πλοήγηση")}</a>`:"";}
-
-  function render(){
-    const box=$("adminMessagesList");
-    box.innerHTML=rows.length?rows.map(m=>`
-      <article class="fwm-message ${m.sender_type==='center'?'mine':'received'} ${m.priority==='urgent'?'urgent':''}">
-        <div class="fwm-message-head">
-          <strong>${m.sender_type==='center'?'Κέντρο':esc(m.sender_label||"Πλήρωμα")}</strong>
-          <span>${m.priority==='urgent'?'🚨 ':''}${time(m.created_at)}</span>
-        </div>
-        <p>${esc(m.body)}</p>${nav(m)}
-        <small>${m.read_count?`Αναγνώσεις: ${m.read_count}`:''}${m.ack_required?` · Επιβεβαιώσεις: ${m.ack_count}`:''}</small>
-        ${m.priority==='urgent'&&m.sender_type!=='center'?`<button class="action-button danger-button" data-center-ack="${m.id}" type="button">✓ Επιβεβαίωση λήψης από Κέντρο</button>`:''}
-      </article>`).join(""):'<p class="empty-table">Δεν υπάρχουν ακόμη μηνύματα σε αυτή την επιχείρηση.</p>';
-    box.querySelectorAll("[data-center-ack]").forEach(b=>b.onclick=async()=>{
-      await rpc("mark_message_center_v36",{p_message_id:b.dataset.centerAck,p_ack:true});
-      loadRoom();
-    });
-  }
-
-  function notice(t,e=false){
-    const n=$("adminMessageNotice");
-    n.textContent=t||"";
-    n.classList.toggle("error",e);
-  }
+  async function ack(id){await rpc("ack_message_center_v37",{p_message_id:id});if(state.activeConversation)openThread(state.activeConversation);}
 
   async function send(e){
-    e.preventDefault();
-    const room=$("adminMessageRoom").value;
-    const body=$("adminMessageBody").value.trim();
-    const r=$("adminMessageRecipient").value;
-    if(!room||!body||!r) return;
-
-    let rt=r,rs=null,sp=null;
-    if(r.startsWith("crew:")){rt="crew";rs=r.slice(5);}
-    if(r.startsWith("support:")){rt="support";sp=r.slice(8);}
-
-    // If registered point mode is selected, sync the selected point before sending.
-    if($("fwmAdminPointMode")?.value==="registered"){
-      const p=points.find(x=>x.id===$("adminMessagePoint").value);
-      pointAttachment=p?{id:p.id,name:p.name,latitude:p.latitude,longitude:p.longitude}:null;
-    }
-
-    notice("Αποστολή…");
+    e.preventDefault();const recipient=$("v37AdminRecipient").value,body=$("v37AdminBody").value.trim();
+    if(!recipient||!body)return;
     try{
-      await rpc("send_message_center_v36",{
-        p_room_id:room,
-        p_recipient_type:rt,
-        p_recipient_session_id:rs,
-        p_recipient_support_id:sp,
-        p_priority:$("adminMessagePriority").value,
+      notice("Αποστολή…");
+      await rpc("send_center_message_v37",{
+        p_recipient_session_id:recipient,
         p_body:body,
-        p_point_id:pointAttachment?.id||null,
-        p_point_name:pointAttachment?.name||null,
-        p_latitude:pointAttachment?.latitude??null,
-        p_longitude:pointAttachment?.longitude??null
+        p_priority:$("v37AdminPriority").value,
+        p_point_name:state.pointAttachment?.name||null,
+        p_latitude:state.pointAttachment?.latitude??null,
+        p_longitude:state.pointAttachment?.longitude??null
       });
-      $("adminMessageBody").value="";
-      pointAttachment=null;
-      $("fwmAdminPointMode").value="none";
-      renderAttachmentMode();
-      renderAttachmentSummary();
-      notice("");
-      await loadRoom();
-    }catch(err){
-      notice(err.message||"Η αποστολή απέτυχε.",true);
-    }
+      $("v37AdminBody").value="";state.pointAttachment=null;$("v37AdminPointMode").value="none";renderPointMode();notice("");await loadThreads();
+    }catch(e2){notice(e2.message,true);}
   }
+
+  async function loadPoints(){
+    try{
+      const{data}=await ds.client.from("water_points").select("id,name,latitude,longitude").in("publication_status",["published","hidden"]).order("name");
+      state.points=data||[];
+      $("v37AdminRegistered").innerHTML='<option value="">Επίλεξε σημείο</option>'+state.points.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+    }catch{}
+  }
+  function renderPointMode(){
+    const m=$("v37AdminPointMode").value;
+    $("v37AdminRegisteredWrap").classList.toggle("hidden",m!=="registered");
+    $("v37AdminCoordsWrap").classList.toggle("hidden",m!=="coords");
+    $("v37AdminMapWrap").classList.toggle("hidden",m!=="map");
+    if(m==="none"){state.pointAttachment=null;renderPointSummary();}
+    if(m==="map")setTimeout(initMap,50);
+  }
+  function parseCoords(v){
+    const x=String(v||"").trim().match(/^\s*(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)\s*$/);if(!x)return null;
+    return {latitude:Number(x[1]),longitude:Number(x[2])};
+  }
+  function useCoords(){
+    const p=parseCoords($("v37AdminCoords").value);if(!p){notice("Μη έγκυρες συντεταγμένες.",true);return;}
+    state.pointAttachment={...p,name:$("v37AdminCoordsName").value.trim()||"Προσωρινό σημείο"};notice("");renderPointSummary();
+  }
+  function useRegistered(){
+    const p=state.points.find(x=>x.id===$("v37AdminRegistered").value);
+    state.pointAttachment=p?{name:p.name,latitude:p.latitude,longitude:p.longitude}:null;renderPointSummary();
+  }
+  function initMap(){
+    if(!window.L||!$("v37AdminMap"))return;
+    if(state.pickerMap){state.pickerMap.invalidateSize();return;}
+    state.pickerMap=L.map("v37AdminMap").setView([37.95,22.98],10);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(state.pickerMap);
+    state.pickerMap.on("click",e=>{
+      if(state.pickerMarker)state.pickerMarker.setLatLng(e.latlng);else state.pickerMarker=L.marker(e.latlng).addTo(state.pickerMap);
+      state.pointAttachment={name:$("v37AdminMapName").value.trim()||"Προσωρινό σημείο",latitude:e.latlng.lat,longitude:e.latlng.lng};renderPointSummary();
+    });
+  }
+  function renderPointSummary(){
+    $("v37AdminPointSummary").textContent=state.pointAttachment?`📍 ${state.pointAttachment.name} · ${state.pointAttachment.latitude.toFixed(5)}, ${state.pointAttachment.longitude.toFixed(5)}`:"Χωρίς σημείο χάρτη";
+  }
+
+  window.addEventListener("admin-dashboard-ready",init);
+  document.querySelector('[data-view="messages"]')?.addEventListener("click",init);
 })();
