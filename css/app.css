@@ -503,3 +503,8 @@ button:disabled{opacity:.65;cursor:wait}.connection-badge.error{color:var(--bad)
 .support-assignment{padding:14px;border-radius:14px;border:1px solid #c8dcf0;background:#f2f8fe}.support-assignment p{margin:6px 0}.support-assignment .navigate-button{display:inline-flex;margin-top:10px}
 .support-admin-list{display:grid;gap:12px;margin-top:14px}.support-admin-card{padding:16px;border:1px solid var(--line);border-radius:16px;background:#fff}.support-admin-card.pending{border-left:4px solid #d69b00}.support-admin-card.approved{border-left:4px solid #16834b}.support-admin-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.support-admin-head h3,.support-admin-head p{margin:0 0 4px}.support-admin-head small{color:var(--muted)}.support-notes{padding:10px 12px;background:#f8f9fa;border-radius:10px}.support-approval-row{display:grid;grid-template-columns:minmax(160px,1fr) minmax(160px,1fr) auto auto;gap:8px;margin-top:12px;align-items:center}.support-live-summary{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:12px}.admin-support-live{margin-top:12px}.admin-support-live h4{margin:0 0 8px}
 @media(max-width:700px){.access-badge{bottom:72px}.support-live-grid{grid-template-columns:1fr}.support-approval-row{grid-template-columns:1fr}.support-active-bar{bottom:76px}}
+
+/* v3.5.1 auth UX */
+.menu-action.logout-action { color:#a61d16; }
+.menu-action.logout-action span { color:#a61d16; }
+.menu-action.logout-action:disabled { opacity:.55; cursor:wait; }

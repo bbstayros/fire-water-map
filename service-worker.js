@@ -1,4 +1,4 @@
-const VERSION="fwm-3.5.1-operational-access";
+const VERSION="fwm-3.5.2-auth-fix";
 const STATIC=`${VERSION}-static`,RUNTIME=`${VERSION}-runtime`;
 const SHELL=["./","./index.html","./admin.html","./manifest.webmanifest","./css/app.css","./js/config.js","./js/offline-store.js","./js/data-service.js","./js/access-v35.js","./js/support-v35.js","./js/public-app.js","./js/public-submission.js","./js/live-crews.js","./js/public-ui.js","./js/pwa.js","./js/admin-app.js","./js/admin-submissions.js","./js/admin-live-crews.js","./set-password.html","./js/admin-audit.js","./js/admin-users.js","./js/admin-directory.js","./js/admin-support-v35.js","./js/admin-ui.js","./icons/logo.svg","./icons/app-icon.svg","./icons/hydrant.svg","./icons/tank.svg","./icons/water-source.svg","./icons/vehicles/car.svg","./icons/vehicles/4x4.svg","./icons/vehicles/pickup.svg","./icons/vehicles/fire-engine.svg","./icons/vehicles/tanker.svg","./icons/vehicles/foot-team.svg","./data/points.geojson"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(STATIC).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));

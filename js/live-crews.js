@@ -866,6 +866,17 @@
     if (state.watchId !== null) navigator.geolocation.clearWatch(state.watchId);
   });
 
+  window.FWMLiveCrews = Object.freeze({
+    stopSharing: async () => {
+      if (state.sharing) await stopSharing(true);
+      else if (state.watchId !== null) {
+        navigator.geolocation.clearWatch(state.watchId);
+        state.watchId = null;
+      }
+    },
+    isSharing: () => state.sharing
+  });
+
   if (state.code) {
     startTimers();
   }
