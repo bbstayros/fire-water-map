@@ -48,6 +48,7 @@
         <button class="nav-item editor-only" data-view="submissions" type="button"><span class="nav-icon">⌛</span><span>Υπό έγκριση</span><b id="pendingSubmissionBadge" class="nav-badge hidden">0</b></button>
         <button class="nav-item admin-only" data-view="codes" type="button"><span>Κωδικοί καταχώρησης</span></button>
         <button class="nav-item admin-only" data-view="operations" type="button"><span class="nav-icon">🚒</span><span>Οχήματα</span></button>
+        <button class="nav-item admin-only" data-view="messages" type="button"><span class="nav-icon">💬</span><span>Μηνύματα</span></button>
         <button class="nav-item admin-only" data-view="users" type="button"><span>Χρήστες</span></button>
       </nav>
       <div class="sidebar-user">
@@ -288,6 +289,22 @@
         </div>
       </section>
 
+
+      <section id="messagesView" class="dashboard-section hidden">
+        <div class="dashboard-grid codes-grid fwm-admin-message-grid">
+          <form id="adminMessageForm" class="panel point-form">
+            <div class="panel-heading"><div><h2>Νέο μήνυμα</h2><p>Αποστολή σε πλήρωμα, όλα τα πληρώματα ή εγκεκριμένη υποστήριξη.</p></div></div>
+            <label>Επιχείρηση<select id="adminMessageRoom" required></select></label>
+            <label>Προς<select id="adminMessageRecipient" required></select></label>
+            <label>Τύπος<select id="adminMessagePriority"><option value="normal">Απλό</option><option value="urgent">🚨 Επείγον — επιβεβαίωση λήψης</option></select></label>
+            <label>Σημείο χάρτη<select id="adminMessagePoint"><option value="">Χωρίς σημείο χάρτη</option></select></label>
+            <label>Μήνυμα<textarea id="adminMessageBody" rows="5" maxlength="1000" required placeholder="Σύντομη επιχειρησιακή οδηγία ή ενημέρωση…"></textarea></label>
+            <button class="action-button primary full" type="submit">Αποστολή</button><div id="adminMessageNotice" class="form-message"></div>
+          </form>
+          <div class="panel"><div class="panel-heading responsive"><div><h2>Συνομιλία επιχείρησης</h2><p>Ιστορικό μηνυμάτων και επιβεβαιώσεων.</p></div><button id="adminMessageRefresh" class="action-button" type="button">↻ Ανανέωση</button></div><div id="adminMessagesList" class="fwm-message-list admin-message-list"></div></div>
+        </div>
+      </section>
+
       <section id="usersView" class="dashboard-section hidden">
         <div class="panel">
           <div class="panel-heading responsive"><div><h2>Χρήστες</h2><p>Πρόσκληση, ρόλοι, ενεργοποίηση και οριστική διαγραφή.</p></div><button id="openInviteUser" class="action-button primary" type="button">＋ Νέος χρήστης</button></div>
@@ -332,6 +349,7 @@
   <script src="js/admin-live-crews.js"></script>
   <script src="js/admin-directory.js"></script>
   <script src="js/admin-support-v35.js"></script>
+  <script src="js/admin-messages-v36.js"></script>
   <script src="js/admin-users.js"></script>
   <script src="js/admin-audit.js"></script>
   <script src="js/admin-ui.js"></script>
