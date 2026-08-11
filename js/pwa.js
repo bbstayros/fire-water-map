@@ -1,9 +1,31 @@
 (() => {
   "use strict";
 
+  // v3.6.1: hide permanent vehicle labels on the map.
+  // The label is still available through the popup when the marker is tapped/clicked.
+  const style = document.createElement("style");
+  style.textContent = `.crew-map-label{display:none!important;}`;
+  document.head.appendChild(style);
+
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js").catch(console.error);
+    window.addEventListener("load", async () => {
+      try {
+        const registration = await navigator.serviceWorker.register("./service-worker.js");
+
+        // Ask the browser to check immediately for a newer service worker.
+        await registration.update();
+
+        // If a new worker becomes active while this page is open,
+        // reload once so the user does not keep mixed old/new assets.
+        let reloading = false;
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (reloading) return;
+          reloading = true;
+          window.location.reload();
+        });
+      } catch (error) {
+        console.error(error);
+      }
     });
   }
 
