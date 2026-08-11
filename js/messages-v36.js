@@ -24,6 +24,46 @@
     pickerMarker: null
   };
 
+
+  function ensureDeviceId(){
+    let value = localStorage.getItem("fwm-device-id") || "";
+    if(!value){
+      value = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+      localStorage.setItem("fwm-device-id", value);
+    }
+    return value;
+  }
+
+  function syncCrewIdentity(){
+    state.sessionId = localStorage.getItem("fwm-crew-session") || "";
+    state.deviceId = ensureDeviceId();
+    state.vehicleName = localStorage.getItem("fwm-crew-name") || "";
+    return !!(state.sessionId && state.deviceId);
+  }
+
+
+  let lastThreadStamps=new Map(), audioArmed=false, audioCtx=null;
+  function armMessageAudio(){
+    audioArmed=true;
+    try{audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();audioCtx.resume?.();}catch{}
+  }
+  window.addEventListener("pointerdown",armMessageAudio,{once:true});
+  window.addEventListener("keydown",armMessageAudio,{once:true});
+  function playUrgentTone(){
+    if(!audioArmed)return;
+    try{
+      audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();
+      const now=audioCtx.currentTime;
+      [0,.22,.44].forEach((d,i)=>{
+        const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+        o.type="square";o.frequency.value=i===1?880:660;
+        g.gain.setValueAtTime(.0001,now+d);
+        g.gain.exponentialRampToValueAtTime(.12,now+d+.015);
+        g.gain.exponentialRampToValueAtTime(.0001,now+d+.16);
+        o.connect(g);g.connect(audioCtx.destination);o.start(now+d);o.stop(now+d+.18);
+      });
+    }catch{}
+  }
   const style = document.createElement("style");
   style.textContent = `
     .v37-msg-fab{position:fixed;right:18px;bottom:118px;z-index:1750;width:64px;height:64px;border:0;border-radius:20px;background:#981b16;color:#fff;font-size:28px;box-shadow:0 8px 24px #0003}
@@ -118,13 +158,11 @@
   }
 
   const rpc=async(name,params)=>{const{data,error}=await ds.client.rpc(name,params);if(error)throw error;return data;};
-  const visible=()=>["crew","admin"].includes(state.access.mode)&&state.sessionId&&state.deviceId;
+  const visible=()=>{syncCrewIdentity();return ["crew","admin"].includes(state.access.mode)&&!!state.sessionId&&!!state.deviceId;};
 
   async function refreshAccess(e){
     state.access=e?.detail || await ds.currentAccess();
-    state.sessionId=localStorage.getItem("fwm-crew-session")||"";
-    state.deviceId=localStorage.getItem("fwm-device-id")||"";
-    state.vehicleName=localStorage.getItem("fwm-crew-name")||"";
+    syncCrewIdentity();
     $("v37MsgFab")?.classList.toggle("hidden",!visible());
   }
 
@@ -139,6 +177,7 @@
     if(tab==="history") loadThreads();
   }
   async function open(recipientSessionId=null, recipientLabel=null){
+    syncCrewIdentity();
     if(!visible()) return;
     $("v37MsgModal").classList.remove("hidden");
     document.body.classList.add("modal-open");
@@ -157,6 +196,7 @@
   }
 
   async function loadPeers(){
+    syncCrewIdentity();
     try{
       state.peers=await rpc("crew_peers_v37",{p_session_id:state.sessionId,p_device_id:state.deviceId})||[];
       const old=$("v37Recipient").value;
@@ -167,17 +207,26 @@
   }
 
   async function loadThreads(){
+    syncCrewIdentity();
     if(!visible()) return;
     try{
-      state.threads=await rpc("crew_threads_v37",{p_session_id:state.sessionId,p_device_id:state.deviceId})||[];
+      const fresh=await rpc("crew_threads_v37",{p_session_id:state.sessionId,p_device_id:state.deviceId})||[];
+      for(const t of fresh){
+        const stamp=String(t.last_message_at||"");
+        const prev=lastThreadStamps.get(t.conversation_id);
+        if(prev && prev!==stamp && Number(t.unread_count||0)>0 && t.last_priority==="urgent") playUrgentTone();
+        lastThreadStamps.set(t.conversation_id,stamp);
+      }
+      state.threads=fresh;
       renderThreads();
       const unread=state.threads.reduce((s,t)=>s+Number(t.unread_count||0),0);
       $("v37Unread").textContent=unread;$("v37Unread").classList.toggle("hidden",!unread);
     }catch(e){notice(e.message,true);}
   }
   function otherLabel(t){
-    const me=state.sessionId;
-    if(t.endpoint_a_type==="crew"&&t.endpoint_a_id===me) return t.endpoint_b_label;
+    const myLabel=String(state.vehicleName||"").trim();
+    if(t.endpoint_a_type==="crew" && String(t.endpoint_a_label||"").trim()===myLabel) return t.endpoint_b_label;
+    if(t.endpoint_b_type==="crew" && String(t.endpoint_b_label||"").trim()===myLabel) return t.endpoint_a_label;
     return t.endpoint_a_label;
   }
   function renderThreads(){
@@ -194,6 +243,7 @@
     box.querySelectorAll("[data-thread]").forEach(b=>b.onclick=()=>openThread(b.dataset.thread));
   }
   async function openThread(id){
+    syncCrewIdentity();
     state.activeConversation=id;
     $("v37Threads").classList.add("hidden");$("v37ChatHeader").classList.remove("hidden");
     const t=state.threads.find(x=>x.conversation_id===id);
@@ -205,17 +255,19 @@
     }catch(e){notice(e.message,true);}
   }
   function bubble(m){
-    const mine=m.sender_type==="crew"&&m.sender_id===state.sessionId;
+    const mine=m.sender_type==="crew"&&String(m.sender_label||"").trim()===String(state.vehicleName||"").trim();
     const nav=m.latitude!=null&&m.longitude!=null?`<a class="v37-map-link" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${m.latitude},${m.longitude}">📍 ${esc(m.point_name||"Πλοήγηση")}</a>`:"";
     const ack=m.priority==="urgent"&&!mine&&!m.acknowledged_at?`<button class="v37-ack" data-ack="${m.id}" type="button">✓ Επιβεβαίωση λήψης</button>`:"";
     return `<article class="v37-bubble ${mine?"mine":""} ${m.priority==="urgent"?"urgent":""}"><strong>${mine?"Εσύ":esc(m.sender_label)}</strong><div>${esc(m.body)}</div>${nav}${ack}<small>${new Date(m.created_at).toLocaleString("el-GR")}${m.acknowledged_at?" · ✓ Επιβεβαιώθηκε":""}</small></article>`;
   }
   async function ack(id){
+    syncCrewIdentity();
     await rpc("ack_message_crew_v37",{p_message_id:id,p_session_id:state.sessionId,p_device_id:state.deviceId});
     if(state.activeConversation) openThread(state.activeConversation);
   }
 
   async function send(e){
+    syncCrewIdentity();
     e.preventDefault();
     const body=$("v37Body").value.trim(); if(!body) return;
     const raw=$("v37Recipient").value;
@@ -305,6 +357,21 @@
     }catch{}
   });
   observer.observe(document.body,{childList:true,subtree:true});
+
+  // The crew session can be created after this script has already loaded.
+  // Keep the messaging identity synchronized with live-crews.js in the same tab.
+  let lastIdentitySignature="";
+  setInterval(()=>{
+    const before=lastIdentitySignature;
+    syncCrewIdentity();
+    const now=`${state.sessionId}|${state.deviceId}|${state.vehicleName}`;
+    if(now!==before){
+      lastIdentitySignature=now;
+      $("v37Context") && ($("v37Context").textContent=state.vehicleName||"Πλήρωμα");
+      $("v37MsgFab")?.classList.toggle("hidden",!visible());
+      if(visible()) loadThreads();
+    }
+  },2000);
 
   inject();
   window.addEventListener("fwm-access-changed",refreshAccess);
