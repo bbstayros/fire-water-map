@@ -42,28 +42,132 @@
   }
 
 
-  let lastThreadStamps=new Map(), audioArmed=false, audioCtx=null;
-  function armMessageAudio(){
-    audioArmed=true;
-    try{audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();audioCtx.resume?.();}catch{}
+  let lastThreadStamps=new Map();
+  let audioArmed=false, audioCtx=null, urgentAlarmTimer=null, urgentVibrationTimer=null;
+  let urgentAlarmActive=false, urgentAlarmThreadId=null;
+
+  function ensureAlarmUi(){
+    if(document.getElementById("v373AlarmEnable")) return;
+
+    const btn=document.createElement("button");
+    btn.id="v373AlarmEnable";
+    btn.type="button";
+    btn.className="v373-alarm-enable";
+    btn.innerHTML="🔕 Ειδοποιήσεις OFF";
+    btn.addEventListener("click", async()=>{
+      await armMessageAudio(true);
+    });
+    document.body.appendChild(btn);
+
+    const banner=document.createElement("button");
+    banner.id="v373UrgentBanner";
+    banner.type="button";
+    banner.className="v373-urgent-banner hidden";
+    banner.innerHTML="<strong>🚨 ΕΠΕΙΓΟΝ ΜΗΝΥΜΑ</strong><span>Πάτησε για άνοιγμα</span>";
+    banner.addEventListener("click", async()=>{
+      stopUrgentAlarm();
+      document.getElementById("v37MsgFab")?.click();
+      document.getElementById("v37TabHistory")?.click();
+      if(urgentAlarmThreadId){
+        setTimeout(()=>document.querySelector(`[data-thread="${urgentAlarmThreadId}"]`)?.click(),250);
+      }
+    });
+    document.body.appendChild(banner);
   }
-  window.addEventListener("pointerdown",armMessageAudio,{once:true});
-  window.addEventListener("keydown",armMessageAudio,{once:true});
-  function playUrgentTone(){
-    if(!audioArmed)return;
+
+  async function armMessageAudio(requestNotification=false){
+    try{
+      audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();
+      if(audioCtx.state==="suspended") await audioCtx.resume();
+      audioArmed=audioCtx.state==="running";
+    }catch{
+      audioArmed=false;
+    }
+
+    if(requestNotification && "Notification" in window && Notification.permission==="default"){
+      try{await Notification.requestPermission();}catch{}
+    }
+
+    const btn=document.getElementById("v373AlarmEnable");
+    if(btn){
+      btn.innerHTML=audioArmed?"🔔 Ειδοποιήσεις ON":"🔕 Ειδοποιήσεις OFF";
+      btn.classList.toggle("on",audioArmed);
+    }
+    return audioArmed;
+  }
+
+  window.addEventListener("pointerdown",()=>armMessageAudio(false),{once:true});
+  window.addEventListener("keydown",()=>armMessageAudio(false),{once:true});
+
+  function sirenBurst(){
+    if(!audioArmed) return;
     try{
       audioCtx ||= new (window.AudioContext||window.webkitAudioContext)();
       const now=audioCtx.currentTime;
-      [0,.22,.44].forEach((d,i)=>{
-        const o=audioCtx.createOscillator(),g=audioCtx.createGain();
-        o.type="square";o.frequency.value=i===1?880:660;
-        g.gain.setValueAtTime(.0001,now+d);
-        g.gain.exponentialRampToValueAtTime(.12,now+d+.015);
-        g.gain.exponentialRampToValueAtTime(.0001,now+d+.16);
-        o.connect(g);g.connect(audioCtx.destination);o.start(now+d);o.stop(now+d+.18);
-      });
+      const duration=1.55;
+      const osc=audioCtx.createOscillator();
+      const gain=audioCtx.createGain();
+      osc.type="sawtooth";
+      osc.frequency.setValueAtTime(560,now);
+      osc.frequency.linearRampToValueAtTime(980,now+0.72);
+      osc.frequency.linearRampToValueAtTime(560,now+1.44);
+      gain.gain.setValueAtTime(0.0001,now);
+      gain.gain.exponentialRampToValueAtTime(0.16,now+0.04);
+      gain.gain.setValueAtTime(0.16,now+1.38);
+      gain.gain.exponentialRampToValueAtTime(0.0001,now+duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now+duration);
     }catch{}
   }
+
+  function vibrateUrgent(){
+    if(!("vibrate" in navigator)) return;
+    try{navigator.vibrate([600,220,600,220,1100]);}catch{}
+  }
+
+  function showSystemNotification(title,body){
+    if(!("Notification" in window) || Notification.permission!=="granted") return;
+    try{
+      const n=new Notification(title,{
+        body,
+        icon:"icons/app-icon-192.png",
+        tag:"fwm-urgent-message",
+        renotify:true,
+        requireInteraction:true
+      });
+      n.onclick=()=>{window.focus();n.close();};
+    }catch{}
+  }
+
+  function startUrgentAlarm(thread){
+    urgentAlarmThreadId=thread?.conversation_id||urgentAlarmThreadId;
+    if(urgentAlarmActive) return;
+    urgentAlarmActive=true;
+    document.documentElement.classList.add("v373-urgent-flash");
+    document.getElementById("v373UrgentBanner")?.classList.remove("hidden");
+
+    sirenBurst();
+    vibrateUrgent();
+    urgentAlarmTimer=setInterval(sirenBurst,1800);
+    urgentVibrationTimer=setInterval(vibrateUrgent,3100);
+
+    showSystemNotification(
+      "🚨 Επείγον επιχειρησιακό μήνυμα",
+      thread?.last_message||"Άνοιξε την εφαρμογή για προβολή."
+    );
+  }
+
+  function stopUrgentAlarm(){
+    urgentAlarmActive=false;
+    if(urgentAlarmTimer){clearInterval(urgentAlarmTimer);urgentAlarmTimer=null;}
+    if(urgentVibrationTimer){clearInterval(urgentVibrationTimer);urgentVibrationTimer=null;}
+    try{navigator.vibrate?.(0);}catch{}
+    document.documentElement.classList.remove("v373-urgent-flash");
+    document.getElementById("v373UrgentBanner")?.classList.add("hidden");
+  }
+
   const style = document.createElement("style");
   style.textContent = `
     .v37-msg-fab{position:fixed;right:18px;bottom:118px;z-index:1750;width:64px;height:64px;border:0;border-radius:20px;background:#981b16;color:#fff;font-size:28px;box-shadow:0 8px 24px #0003}
@@ -95,11 +199,21 @@
     .v37-map-picker{height:230px;border-radius:14px;overflow:hidden}
     .v37-summary{padding:9px 11px;background:#f6f8f9;border:1px solid #e0e5e8;border-radius:12px;color:#5d6972}
     .v37-popup-message{flex:1;border:1px solid #d8dfe3;border-radius:14px;padding:11px;background:#fff;font-weight:800}
+
+    .v373-alarm-enable{position:fixed;right:18px;top:82px;z-index:1760;border:1px solid #d8dfe3;border-radius:999px;padding:8px 12px;background:#fff;color:#26323a;font-weight:800;box-shadow:0 5px 18px #0002}
+    .v373-alarm-enable.on{background:#e8f6ee;color:#137743;border-color:#b9dfc8}
+    .v373-urgent-banner{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:6500;border:0;border-radius:18px;padding:13px 18px;background:#b42318;color:#fff;box-shadow:0 12px 35px #0005;display:flex;gap:12px;align-items:center;animation:v373Pulse .72s infinite alternate}
+    .v373-urgent-banner.hidden{display:none!important}
+    .v373-urgent-banner span{font-size:.9rem}
+    @keyframes v373Pulse{from{filter:brightness(.88);transform:translateX(-50%) scale(1)}to{filter:brightness(1.25);transform:translateX(-50%) scale(1.035)}}
+    html.v373-urgent-flash body::after{content:"";position:fixed;inset:0;z-index:6400;pointer-events:none;border:10px solid #ef2929;box-shadow:inset 0 0 55px #ef292980;animation:v373Flash .6s infinite alternate}
+    @keyframes v373Flash{from{opacity:.15}to{opacity:.9}}
     @media(max-width:720px){.v37-msg-fab{bottom:165px}.v37-msg-card{padding:18px;border-radius:24px}}
   `;
   document.head.appendChild(style);
 
   function inject(){
+    ensureAlarmUi();
     if($("v37MsgFab")) return;
     document.body.insertAdjacentHTML("beforeend", `
       <button id="v37MsgFab" class="v37-msg-fab hidden" type="button">💬<b id="v37Unread" class="hidden">0</b></button>
@@ -214,10 +328,12 @@
       for(const t of fresh){
         const stamp=String(t.last_message_at||"");
         const prev=lastThreadStamps.get(t.conversation_id);
-        if(prev && prev!==stamp && Number(t.unread_count||0)>0 && t.last_priority==="urgent") playUrgentTone();
+        if(prev && prev!==stamp && Number(t.unread_count||0)>0 && t.last_priority==="urgent") startUrgentAlarm(t);
         lastThreadStamps.set(t.conversation_id,stamp);
       }
       state.threads=fresh;
+      const urgentUnread=fresh.some(t=>Number(t.unread_count||0)>0 && t.last_priority==="urgent");
+      if(!urgentUnread) stopUrgentAlarm();
       renderThreads();
       const unread=state.threads.reduce((s,t)=>s+Number(t.unread_count||0),0);
       $("v37Unread").textContent=unread;$("v37Unread").classList.toggle("hidden",!unread);
@@ -244,6 +360,7 @@
   }
   async function openThread(id){
     syncCrewIdentity();
+    stopUrgentAlarm();
     state.activeConversation=id;
     $("v37Threads").classList.add("hidden");$("v37ChatHeader").classList.remove("hidden");
     const t=state.threads.find(x=>x.conversation_id===id);
@@ -374,6 +491,7 @@
   },2000);
 
   inject();
+  ensureAlarmUi();
   window.addEventListener("fwm-access-changed",refreshAccess);
   refreshAccess();
   setInterval(()=>{if(visible()) loadThreads();},15000);
