@@ -6,7 +6,21 @@
   const authRedirect=()=>`${String(window.APP_CONFIG.siteUrl||location.origin).replace(/\/$/,"")}/set-password.html`;
   window.addEventListener("admin-dashboard-ready",e=>{profile=e.detail.profile;currentUser=e.detail.user;if(profile?.role==="admin")loadUsers();});
   document.querySelector('[data-view="users"]')?.addEventListener("click",loadUsers);$("userSearch")?.addEventListener("input",render);$("userRoleFilter")?.addEventListener("change",render);$("userStatusFilter")?.addEventListener("change",render);
-  async function invoke(action,payload={}){const{data,error}=await ds.client.functions.invoke(window.APP_CONFIG.userManagementFunction||"admin-users",{body:{action,...payload}});if(error)throw error;if(data?.error)throw new Error(data.error);return data;}
+  async function invoke(action,payload={}){
+    const {data:{session},error:sessionError}=await ds.client.auth.getSession();
+    if(sessionError)throw sessionError;
+    if(!session?.access_token)throw new Error("Η συνεδρία διαχειριστή έληξε. Κάνε αποσύνδεση και νέα σύνδεση.");
+    const{data,error}=await ds.client.functions.invoke(
+      window.APP_CONFIG.userManagementFunction||"admin-users",
+      {
+        body:{action,...payload},
+        headers:{Authorization:`Bearer ${session.access_token}`}
+      }
+    );
+    if(error)throw error;
+    if(data?.error)throw new Error(data.error);
+    return data;
+  }
   async function loadUsers(){if(profile?.role!=="admin")return;$("usersList").innerHTML='<div class="admin-loading">Φόρτωση χρηστών…</div>';try{const data=await invoke("list");users=data.users||[];$("userManagementSetup").classList.add("hidden");render();}catch(error){console.error(error);$("userManagementSetup").classList.remove("hidden");$("userManagementSetup").innerHTML=`<strong>Η διαχείριση χρηστών χρειάζεται την Edge Function.</strong><p>${esc(error.message||"Δεν είναι διαθέσιμη ακόμη.")}</p><small>Ακολούθησε το αρχείο SETUP-v3.3.md.</small>`;$("usersList").innerHTML="";}}
   function render(){const q=$("userSearch").value.trim().toLocaleLowerCase("el"),role=$("userRoleFilter").value,status=$("userStatusFilter").value;const rows=users.filter(u=>(!q||`${u.email} ${u.full_name||""}`.toLocaleLowerCase("el").includes(q))&&(!role||u.role===role)&&(!status||(status==="active"?u.is_active:!u.is_active)));$("usersList").innerHTML=rows.length?rows.map(u=>`<article class="user-card ${u.is_active?'':'inactive'}"><div class="user-avatar">${esc((u.full_name||u.email||"?").slice(0,1).toUpperCase())}</div><div class="user-main"><h3>${esc(u.full_name||"Χωρίς ονοματεπώνυμο")}</h3><p>${esc(u.email||"—")}</p><small>Τελευταία σύνδεση: ${u.last_sign_in_at?new Date(u.last_sign_in_at).toLocaleString("el-GR"):"Δεν έχει συνδεθεί"}</small></div><select data-user-role="${u.id}" ${u.id===currentUser?.id?'title="Ο δικός σου λογαριασμός"':''}><option value="viewer" ${u.role==='viewer'?'selected':''}>Θεατής</option><option value="editor" ${u.role==='editor'?'selected':''}>Συντάκτης</option><option value="admin" ${u.role==='admin'?'selected':''}>Διαχειριστής</option></select><span class="publication-status ${u.is_active?'published':'hidden'}">${u.is_active?'Ενεργός':'Ανενεργός'}</span><div class="user-actions"><button data-reset-user="${u.id}" type="button">Επαναφορά κωδικού</button><button data-toggle-user="${u.id}" type="button">${u.is_active?'Απενεργοποίηση':'Ενεργοποίηση'}</button><button class="danger-text" data-delete-user="${u.id}" type="button">Διαγραφή</button></div></article>`).join(""):'<p class="empty-table">Δεν βρέθηκαν χρήστες.</p>';
     document.querySelectorAll("[data-user-role]").forEach(x=>x.onchange=()=>updateUser(x.dataset.userRole,{role:x.value}));document.querySelectorAll("[data-toggle-user]").forEach(x=>x.onclick=()=>{const u=users.find(y=>y.id===x.dataset.toggleUser);updateUser(u.id,{is_active:!u.is_active});});document.querySelectorAll("[data-delete-user]").forEach(x=>x.onclick=()=>deleteUser(x.dataset.deleteUser));document.querySelectorAll("[data-reset-user]").forEach(x=>x.onclick=()=>resetPassword(x.dataset.resetUser));}

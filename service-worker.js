@@ -1,4 +1,4 @@
-const VERSION="fwm-v3.7.4-center-alarm-fix";
+const VERSION="fwm-v3.7.5-auth-center-alarm";
 const STATIC=`${VERSION}-static`,RUNTIME=`${VERSION}-runtime`;
 const SHELL=["./","./index.html","./admin.html","./manifest.webmanifest","./css/app.css","./js/config.js","./js/offline-store.js","./js/data-service.js","./js/access-v35.js","./js/support-v35.js","./js/messages-v36.js","./js/map-message-alerts-v372.js","./js/public-app.js","./js/public-submission.js","./js/live-crews.js","./js/public-ui.js","./js/pwa.js","./js/admin-app.js","./js/admin-submissions.js","./js/admin-live-crews.js","./set-password.html","./js/admin-audit.js","./js/admin-users.js","./js/admin-directory.js","./js/admin-support-v35.js","./js/admin-messages-v36.js","./js/admin-ui.js"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(STATIC).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
