@@ -6,7 +6,7 @@
   const esc=v=>String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
   const rpc=async(n,p)=>{const{data,error}=await ds.client.rpc(n,p);if(error)throw error;return data;};
 
-  const state={peers:[],threads:[],activeConversation:null,pointAttachment:null,points:[],pickerMap:null,pickerMarker:null};
+  const state={peers:[],threads:[],activeVehicleIds:new Set(),activeConversation:null,pointAttachment:null,points:[],pickerMap:null,pickerMarker:null};
 
   const style=document.createElement("style");
   style.textContent=`
@@ -37,7 +37,7 @@
       <div class="v37-admin-grid">
         <section class="v37-admin-panel">
           <h2>Νέο μήνυμα</h2>
-          <p>Αποστολή απευθείας σε συγκεκριμένο ενεργό όχημα.</p>
+          <p>Αποστολή σε ενεργό καταχωρημένο όχημα ή μαζικά σε όλα τα ενεργά πληρώματα.</p>
           <div id="v37AdminNotice"></div>
           <form id="v37AdminCompose" class="v37-admin-compose">
             <label>Προς<select id="v37AdminRecipient"></select></label>
@@ -82,18 +82,31 @@
   async function init(){
     if(!$("v37AdminCompose")) build();
     try{
-      const [peers,threads]=await Promise.all([
+      const [peers,threads,registry]=await Promise.all([
         rpc("center_peers_v37",{}),
-        rpc("center_threads_v37",{})
+        rpc("center_threads_v37",{}),
+        ds.client.from("vehicle_registry").select("id").eq("is_active",true)
       ]);
       state.peers=peers||[];state.threads=threads||[];
+      state.activeVehicleIds=new Set((registry.data||[]).map(v=>String(v.id)));
       renderPeers();renderThreads();loadPoints();
     }catch(e){notice(e.message,true);}
   }
+  function usablePeers(){
+    const now=Date.now(),seen=new Set();
+    return state.peers
+      .filter(p=>p.vehicle_id && state.activeVehicleIds.has(String(p.vehicle_id)))
+      .filter(p=>p.last_seen_at && now-new Date(p.last_seen_at).getTime()<=5*60*1000)
+      .sort((a,b)=>new Date(b.last_seen_at)-new Date(a.last_seen_at))
+      .filter(p=>{const k=String(p.vehicle_id);if(seen.has(k))return false;seen.add(k);return true;})
+      .sort((a,b)=>String(a.vehicle_name||"").localeCompare(String(b.vehicle_name||""),"el"));
+  }
   function renderPeers(){
-    $("v37AdminRecipient").innerHTML=state.peers.length?
-      state.peers.map(p=>`<option value="${p.session_id}">🚒 ${esc(p.vehicle_name||"Πλήρωμα")}</option>`).join(""):
-      '<option value="">Δεν υπάρχουν ενεργά οχήματα</option>';
+    const peers=usablePeers();
+    $("v37AdminRecipient").innerHTML=peers.length?
+      '<option value="__ALL_ACTIVE_CREWS__">📢 Όλα τα ενεργά πληρώματα</option>'+
+      peers.map(p=>`<option value="${p.session_id}">🚒 ${esc(p.vehicle_name||"Πλήρωμα")}</option>`).join(""):
+      '<option value="">Δεν υπάρχουν ενεργά καταχωρημένα οχήματα</option>';
   }
   async function loadThreads(){
     try{state.threads=await rpc("center_threads_v37",{})||[];renderThreads();}catch(e){notice(e.message,true);}
@@ -135,17 +148,32 @@
   async function send(e){
     e.preventDefault();const recipient=$("v37AdminRecipient").value,body=$("v37AdminBody").value.trim();
     if(!recipient||!body)return;
+    const payload=sessionId=>({
+      p_recipient_session_id:sessionId,
+      p_body:body,
+      p_priority:$("v37AdminPriority").value,
+      p_point_name:state.pointAttachment?.name||null,
+      p_latitude:state.pointAttachment?.latitude??null,
+      p_longitude:state.pointAttachment?.longitude??null
+    });
     try{
-      notice("Αποστολή…");
-      await rpc("send_center_message_v37",{
-        p_recipient_session_id:recipient,
-        p_body:body,
-        p_priority:$("v37AdminPriority").value,
-        p_point_name:state.pointAttachment?.name||null,
-        p_latitude:state.pointAttachment?.latitude??null,
-        p_longitude:state.pointAttachment?.longitude??null
-      });
-      $("v37AdminBody").value="";state.pointAttachment=null;$("v37AdminPointMode").value="none";renderPointMode();notice("");await loadThreads();
+      const broadcast=recipient==="__ALL_ACTIVE_CREWS__";
+      const peers=broadcast?usablePeers():[];
+      if(broadcast && !peers.length){notice("Δεν υπάρχουν ενεργά καταχωρημένα πληρώματα.",true);return;}
+      notice(broadcast?`Μαζική αποστολή σε ${peers.length} πληρώματα…`:"Αποστολή…");
+      if(broadcast){
+        const results=await Promise.allSettled(peers.map(p=>rpc("send_center_message_v37",payload(p.session_id))));
+        const ok=results.filter(r=>r.status==="fulfilled").length;
+        const failed=results.length-ok;
+        if(failed) notice(`Στάλθηκε σε ${ok}/${results.length} πληρώματα. ${failed} αποστολές απέτυχαν.`,true);
+        else notice(`✓ Στάλθηκε σε ${ok} πληρώματα.`);
+      }else{
+        await rpc("send_center_message_v37",payload(recipient));
+        notice("✓ Το μήνυμα στάλθηκε.");
+      }
+      $("v37AdminBody").value="";state.pointAttachment=null;$("v37AdminPointMode").value="none";renderPointMode();
+      await loadThreads();
+      setTimeout(()=>notice(""),3500);
     }catch(e2){notice(e2.message,true);}
   }
 

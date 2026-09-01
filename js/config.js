@@ -7,6 +7,8 @@ window.APP_CONFIG = Object.freeze({
   fallbackGeoJson: "data/points.geojson",
   siteUrl: "https://bbstayros.github.io/fire-water-map",
   userManagementFunction: "admin-users",
+  pushFunction: "message-push-v376",
+  vapidPublicKey: "BJ_QJQ9MxvsLnnLu8VECiGOPi9xiJx-UVNSdGSAUd-kPr7VL8wiNdRLkfDsV8dZwI1TsMhH09qF4D2wr-zFoQ0g",
 
   // Supabase browser credentials. Το publishable key επιτρέπεται να βρίσκεται
   // στο frontend, εφόσον το RLS και οι policies έχουν ρυθμιστεί σωστά.

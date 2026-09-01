@@ -53,6 +53,8 @@
     sendTimer: null,
     wakeLock: null,
     markers: new Map(),
+    supportMarkers: new Map(),
+    supportUnits: [],
     crews: [],
     directory: { vehicles: [], members: [] },
     selectedVehicleId: null,
@@ -511,8 +513,12 @@
         try { rows = await rpc("list_operation_crews_v2", { p_code: state.code }); } catch { rows = await rpc("list_operation_crews", { p_code: state.code }); }
       }
       state.crews = rows || [];
+      if(["crew","admin"].includes(accessMode)){
+        try{state.supportUnits=await rpc("list_active_support_units_v38",{})||[];}catch(e){state.supportUnits=[];console.warn("support map",e);}
+      }else state.supportUnits=[];
       renderCrewList();
       renderCrewMarkers();
+      renderSupportMarkers();
 
       const visibleCount = state.crews.filter(row => crewAge(row) <= 300 && row.is_sharing).length;
       ui.count.textContent = visibleCount;
@@ -694,6 +700,32 @@
       }
     }
   }
+  function supportAge(row){return row.last_seen_at?Math.max(0,(Date.now()-new Date(row.last_seen_at).getTime())/1000):Infinity;}
+  function supportMarkerHtml(row){
+    const age=supportAge(row),cls=age<=120?"live":age<=300?"stale":"offline";
+    return `<div class="support-map-marker ${cls}" title="Υποστήριξη · ${escapeHtml(row.full_name||"")}"><span class="support-map-diamond">◆</span><span class="support-map-status-dot"></span></div>`;
+  }
+  function renderSupportMarkers(){
+    const map=window.FireWaterMap?.map;if(!map)return;
+    const activeIds=new Set();
+    state.supportUnits.forEach(row=>{
+      if(row.latitude==null||row.longitude==null)return;
+      const id=String(row.id);activeIds.add(id);
+      const icon=L.divIcon({html:supportMarkerHtml(row),className:"",iconSize:[44,50],iconAnchor:[22,44]});
+      let marker=state.supportMarkers.get(id);
+      const latlng=[Number(row.latitude),Number(row.longitude)];
+      if(!marker){marker=L.marker(latlng,{icon,zIndexOffset:1100}).addTo(map);state.supportMarkers.set(id,marker);}
+      else{marker.setLatLng(latlng);marker.setIcon(icon);}
+      const speed=Number.isFinite(Number(row.speed_mps))?`${Math.round(Number(row.speed_mps)*3.6)} km/h`:"—";
+      const ago=supportAge(row);const last=Number.isFinite(ago)?timeAgo(ago):"χωρίς ενημέρωση";
+      marker.bindTooltip(`◆ Υποστήριξη · ${escapeHtml(row.full_name||"")}`,{direction:"top",offset:[0,-18],className:"support-map-label"});
+      marker.bindPopup(`<div class="support-map-popup"><strong>◆ ${escapeHtml(row.full_name||"Υποστήριξη")}</strong><small>Υποστήριξη επιχείρησης</small><p>${escapeHtml(row.support_type||"")}${row.vehicle_info?` · ${escapeHtml(row.vehicle_info)}`:""}</p><p>Ταχύτητα: ${escapeHtml(speed)}<br>Τελευταία ενημέρωση: ${escapeHtml(last)}${row.room_name?`<br>Επιχείρηση: ${escapeHtml(row.room_name)}`:""}</p></div>`);
+    });
+    for(const [id,marker] of state.supportMarkers){
+      if(!activeIds.has(id)){map.removeLayer(marker);state.supportMarkers.delete(id);}
+    }
+  }
+
 
   function renderVehicleDetails(row) {
     const identity = crewIdentity(row);
@@ -842,7 +874,7 @@
   window.addEventListener("fwm-access-changed", event => {
     const mode = event.detail?.mode || "public";
     if (["crew","admin"].includes(mode)) { startTimers(); pollCrews(); }
-    else if (!state.sharing && !state.code) { state.crews=[]; renderCrewMarkers(); renderCrewList(); }
+    else if (!state.sharing && !state.code) { state.crews=[]; state.supportUnits=[]; renderCrewMarkers(); renderSupportMarkers(); renderCrewList(); }
   });
 
   window.addEventListener("online", () => {

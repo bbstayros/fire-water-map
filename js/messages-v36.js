@@ -87,6 +87,9 @@
     if(requestNotification && "Notification" in window && Notification.permission==="default"){
       try{await Notification.requestPermission();}catch{}
     }
+    if(requestNotification && window.FwmPush){
+      try{await window.FwmPush.enable();}catch(e){console.warn("push enable",e);}
+    }
 
     const btn=document.getElementById("v373AlarmEnable");
     if(btn){

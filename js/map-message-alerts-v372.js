@@ -52,6 +52,9 @@
     if(requestPermission && "Notification" in window && Notification.permission==="default"){
       try{await Notification.requestPermission();}catch{}
     }
+    if(requestPermission && window.FwmPush){
+      try{await window.FwmPush.enable();}catch(e){console.warn("push enable",e);}
+    }
 
     enable.textContent=audioArmed?"🔔 Ειδοποιήσεις ON":"🔕 Ειδοποιήσεις OFF";
     enable.classList.toggle("on",audioArmed);
