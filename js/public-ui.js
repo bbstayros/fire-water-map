@@ -92,10 +92,11 @@
     const live = supportActive || active;
     operationToggle?.classList.toggle("is-on", live);
     operationToggle?.setAttribute("aria-pressed", String(live));
-    if (label) label.textContent = live ? "LIVE" : "OFF";
+    if (label && label.textContent !== (live ? "LIVE" : "OFF")) label.textContent = live ? "LIVE" : "OFF";
     if (title) {
-      const badgeHtml = '<b id="operationCrewBadge" class="toolbar-count hidden">0</b>';
-      title.innerHTML = supportActive ? `◆ ${supportName} ${badgeHtml}` : (active && crewName ? `🚒 ${crewName} ${badgeHtml}` : `Όχημα ${badgeHtml}`);
+      const wanted = supportActive ? `◆ ${supportName}` : (active && crewName ? `🚒 ${crewName}` : "Όχημα");
+      const textNode = Array.from(title.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
+      if (textNode && textNode.textContent.trim() !== wanted) textNode.textContent = wanted + " ";
     }
 
     const count = Number(crewCount?.textContent || 0);
@@ -131,33 +132,33 @@
   }
 
 
-  function syncNotificationState(){
-    const source=$("v373AlarmEnable");
-    if(!notificationToggle)return;
-    const on=!!source?.classList.contains("on");
-    notificationToggle.classList.toggle("is-on",on);
-    notificationToggle.setAttribute("aria-pressed",String(on));
-    const label=notificationToggle.querySelector(".state-label");
-    if(label)label.textContent=on?"ON":"OFF";
+  function syncNotificationState() {
+    const source = $("v373AlarmEnable");
+    if (!notificationToggle) return;
+    const on = !!source?.classList.contains("on");
+    notificationToggle.classList.toggle("is-on", on);
+    notificationToggle.setAttribute("aria-pressed", String(on));
+    const label = notificationToggle.querySelector(".state-label");
+    if (label && label.textContent !== (on ? "ON" : "OFF")) label.textContent = on ? "ON" : "OFF";
   }
-  notificationToggle?.addEventListener("click",()=>$("v373AlarmEnable")?.click());
 
-  function syncMessageBadge(){
-    const source=$("v37Unread");
-    const badge=$("mobileMessagesBadge");
-    if(!badge)return;
-    const n=Number(source?.textContent||0);
-    badge.textContent=n;badge.classList.toggle("hidden",n<=0);
+  notificationToggle?.addEventListener("click", () => $("v373AlarmEnable")?.click());
+
+  function syncMessageBadge() {
+    const source = $("v37Unread");
+    const badge = $("mobileMessagesBadge");
+    if (!badge) return;
+    const n = Number(source?.textContent || 0);
+    if (badge.textContent !== String(n)) badge.textContent = String(n);
+    badge.classList.toggle("hidden", n <= 0);
   }
-  mobileMessagesButton?.addEventListener("click",()=>{
-    if(localStorage.getItem("fwm-support-access-token")){
-      $("supportMessageFabV381")?.click();
-    }else{
-      $("v37MsgFab")?.click();
-    }
+
+  mobileMessagesButton?.addEventListener("click", () => {
+    if (localStorage.getItem("fwm-support-access-token")) $("supportMessageFabV381")?.click();
+    else $("v37MsgFab")?.click();
   });
 
-  $("menuOfflinePrepButton")?.addEventListener("click",()=>{
+  $("menuOfflinePrepButton")?.addEventListener("click", () => {
     closeModal(appMenu);
     updateHelpConnection();
     openModal(helpModal);
@@ -166,10 +167,6 @@
   const observer = new MutationObserver(() => {
     syncOperationState();
     syncInstallMenu();
-  syncNotificationState();
-  syncMessageBadge();
-    syncNotificationState();
-    syncMessageBadge();
   });
 
   if (crewCount) {
@@ -194,8 +191,10 @@
     });
   }
 
-  const bodyObserver=new MutationObserver(()=>{syncOperationState();syncNotificationState();syncMessageBadge();});
-  bodyObserver.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class"]});
+  const alarmSource = $("v373AlarmEnable");
+  if (alarmSource) observer.observe(alarmSource, { attributes: true, attributeFilter: ["class"] });
+  const unreadSource = $("v37Unread");
+  if (unreadSource) observer.observe(unreadSource, { childList: true, subtree: true });
 
   window.addEventListener("online", updateHelpConnection);
   window.addEventListener("offline", updateHelpConnection);
@@ -205,6 +204,8 @@
   );
 
   syncOperationState();
+  syncNotificationState();
+  syncMessageBadge();
   updateHelpConnection();
   syncInstallMenu();
 
