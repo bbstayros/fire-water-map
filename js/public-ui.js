@@ -132,8 +132,14 @@
   }
 
 
+  function notificationSource() {
+    // Normal crew messaging uses #v373AlarmEnable.
+    // Guest Support / map alerts use .fwm-center-alert-enable.
+    return $("v373AlarmEnable") || document.querySelector(".fwm-center-alert-enable");
+  }
+
   function syncNotificationState() {
-    const source = $("v373AlarmEnable");
+    const source = notificationSource();
     if (!notificationToggle) return;
     const on = !!source?.classList.contains("on");
     notificationToggle.classList.toggle("is-on", on);
@@ -142,7 +148,16 @@
     if (label && label.textContent !== (on ? "ON" : "OFF")) label.textContent = on ? "ON" : "OFF";
   }
 
-  notificationToggle?.addEventListener("click", () => $("v373AlarmEnable")?.click());
+  notificationToggle?.addEventListener("click", () => {
+    const source = notificationSource();
+    if (!source) {
+      console.warn("Fire Water Map: notification controller not available");
+      return;
+    }
+    source.click();
+    setTimeout(syncNotificationState, 150);
+    setTimeout(syncNotificationState, 800);
+  });
 
   function syncMessageBadge() {
     const source = $("v37Unread");
@@ -167,6 +182,8 @@
   const observer = new MutationObserver(() => {
     syncOperationState();
     syncInstallMenu();
+    syncNotificationState();
+    syncMessageBadge();
   });
 
   if (crewCount) {
@@ -191,7 +208,7 @@
     });
   }
 
-  const alarmSource = $("v373AlarmEnable");
+  const alarmSource = notificationSource();
   if (alarmSource) observer.observe(alarmSource, { attributes: true, attributeFilter: ["class"] });
   const unreadSource = $("v37Unread");
   if (unreadSource) observer.observe(unreadSource, { childList: true, subtree: true });
