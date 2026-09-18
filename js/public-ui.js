@@ -9,6 +9,8 @@
   const originalSubmissionButton = $("openSubmissionButton");
   const originalInstallButton = $("installAppButton");
   const crewCount = $("crewCountBadge");
+  const notificationToggle = $("notificationToggleButton");
+  const mobileMessagesButton = $("mobileMessagesButton");
 
   const modals = [appMenu, helpModal].filter(Boolean);
 
@@ -61,6 +63,10 @@
   // OFF -> opens declaration form
   // ON  -> opens the active crew panel, where sharing can be stopped.
   operationToggle?.addEventListener("click", () => {
+    if (localStorage.getItem("fwm-support-access-token")) {
+      $("menuSupportButton")?.click();
+      return;
+    }
     const mode = window.FWMAccess?.get?.()?.mode || "public";
     if (!["crew","admin"].includes(mode)) {
       $("menuCrewLoginButton")?.click();
@@ -79,7 +85,18 @@
     operationToggle?.setAttribute("aria-pressed", String(active));
 
     const label = operationToggle?.querySelector(".state-label");
-    if (label) label.textContent = active ? "ON" : "OFF";
+    const title = operationToggle?.querySelector(".toggle-copy strong");
+    const supportActive = !!localStorage.getItem("fwm-support-access-token");
+    const supportName = localStorage.getItem("fwm-support-name") || "Υποστήριξη";
+    const crewName = localStorage.getItem("fwm-crew-name") || "";
+    const live = supportActive || active;
+    operationToggle?.classList.toggle("is-on", live);
+    operationToggle?.setAttribute("aria-pressed", String(live));
+    if (label) label.textContent = live ? "LIVE" : "OFF";
+    if (title) {
+      const badgeHtml = '<b id="operationCrewBadge" class="toolbar-count hidden">0</b>';
+      title.innerHTML = supportActive ? `◆ ${supportName} ${badgeHtml}` : (active && crewName ? `🚒 ${crewName} ${badgeHtml}` : `Όχημα ${badgeHtml}`);
+    }
 
     const count = Number(crewCount?.textContent || 0);
     const badge = $("operationCrewBadge");
@@ -113,9 +130,46 @@
       : '<span class="help-offline">● Offline</span> — χρησιμοποιούνται αποθηκευμένα δεδομένα.';
   }
 
+
+  function syncNotificationState(){
+    const source=$("v373AlarmEnable");
+    if(!notificationToggle)return;
+    const on=!!source?.classList.contains("on");
+    notificationToggle.classList.toggle("is-on",on);
+    notificationToggle.setAttribute("aria-pressed",String(on));
+    const label=notificationToggle.querySelector(".state-label");
+    if(label)label.textContent=on?"ON":"OFF";
+  }
+  notificationToggle?.addEventListener("click",()=>$("v373AlarmEnable")?.click());
+
+  function syncMessageBadge(){
+    const source=$("v37Unread");
+    const badge=$("mobileMessagesBadge");
+    if(!badge)return;
+    const n=Number(source?.textContent||0);
+    badge.textContent=n;badge.classList.toggle("hidden",n<=0);
+  }
+  mobileMessagesButton?.addEventListener("click",()=>{
+    if(localStorage.getItem("fwm-support-access-token")){
+      $("supportMessageFabV381")?.click();
+    }else{
+      $("v37MsgFab")?.click();
+    }
+  });
+
+  $("menuOfflinePrepButton")?.addEventListener("click",()=>{
+    closeModal(appMenu);
+    updateHelpConnection();
+    openModal(helpModal);
+  });
+
   const observer = new MutationObserver(() => {
     syncOperationState();
     syncInstallMenu();
+  syncNotificationState();
+  syncMessageBadge();
+    syncNotificationState();
+    syncMessageBadge();
   });
 
   if (crewCount) {
@@ -139,6 +193,9 @@
       attributeFilter: ["class"]
     });
   }
+
+  const bodyObserver=new MutationObserver(()=>{syncOperationState();syncNotificationState();syncMessageBadge();});
+  bodyObserver.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class"]});
 
   window.addEventListener("online", updateHelpConnection);
   window.addEventListener("offline", updateHelpConnection);

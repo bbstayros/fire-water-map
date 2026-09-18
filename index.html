@@ -28,7 +28,7 @@
       </a>
       <div class="header-actions">
         <button id="openAppMenu" class="icon-button header-menu-button" type="button" aria-label="Μενού" title="Μενού">☰</button>
-        <a class="icon-button admin-panel-link desktop-admin-only" href="admin.html" aria-label="Διαχείριση" title="Διαχείριση">⚙️</a>
+        <a class="admin-panel-link desktop-admin-only" href="admin.html" aria-label="Διαχείριση" title="Διαχείριση">⚙️ <span>Διαχείριση</span></a>
       </div>
     </header>
 
@@ -48,6 +48,11 @@
         <button id="operationToggleButton" class="toolbar-toggle" type="button" aria-pressed="false">
           <span class="toggle-icon" aria-hidden="true">🚒</span>
           <span class="toggle-copy"><strong>Όχημα <b id="operationCrewBadge" class="toolbar-count hidden">0</b></strong><small><i class="state-dot"></i><b class="state-label">OFF</b></small></span>
+        </button>
+
+        <button id="notificationToggleButton" class="toolbar-toggle notification-toolbar-toggle" type="button" aria-pressed="false">
+          <span class="toggle-icon" aria-hidden="true">🔔</span>
+          <span class="toggle-copy"><strong>Ειδοποιήσεις</strong><small><i class="state-dot"></i><b class="state-label">OFF</b></small></span>
         </button>
 
         <div class="legacy-action-hooks" aria-hidden="true">
@@ -77,6 +82,11 @@
           <img src="icons/water-source.svg" alt="">
           <span>Υδροληψίες</span>
         </label>
+        <button id="mobileMessagesButton" class="dock-filter dock-messages" type="button">
+          <span class="dock-message-icon" aria-hidden="true">💬</span>
+          <span>Μηνύματα</span>
+          <b id="mobileMessagesBadge" class="dock-message-badge hidden">0</b>
+        </button>
       </nav>
 
       <div id="appMenuModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="appMenuTitle">
@@ -88,11 +98,12 @@
           </div>
           <div class="menu-action-list">
             <button id="menuSubmissionButton" class="menu-action" type="button"><span>＋</span><div><strong>Καταχώρηση σημείου</strong><small>Νέος κρουνός, δεξαμενή ή υδροληψία</small></div></button>
-            <button id="menuCrewLoginButton" class="menu-action" type="button"><span>👤</span><div><strong>Σύνδεση πληρώματος</strong><small>Πρόσβαση πληρώματος σε επιχειρησιακά δεδομένα</small></div></button>
+            <button id="menuCrewLoginButton" class="menu-action hidden operational-hook" type="button"><span>👤</span><div><strong>Σύνδεση πληρώματος</strong><small>Πρόσβαση πληρώματος σε επιχειρησιακά δεδομένα</small></div></button>
             <button id="menuLogoutButton" class="menu-action logout-action hidden" type="button"><span>↪</span><div><strong>Αποσύνδεση</strong><small>Έξοδος από τον λογαριασμό</small></div></button>
-            <button id="menuSupportButton" class="menu-action" type="button"><span>◆</span><div><strong>Υποστήριξη επιχείρησης</strong><small>Προσωρινή πρόσβαση μετά από έγκριση του Κέντρου</small></div></button>
+            <button id="menuSupportButton" class="menu-action hidden operational-hook" type="button"><span>◆</span><div><strong>Υποστήριξη επιχείρησης</strong><small>Προσωρινή πρόσβαση μετά από έγκριση του Κέντρου</small></div></button>
             <button id="menuInstallButton" class="menu-action install-menu-action hidden" type="button"><span>⬇️</span><div><strong>Εγκατάσταση εφαρμογής</strong><small>Προσθήκη στην αρχική οθόνη</small></div></button>
-            <button id="menuHelpButton" class="menu-action" type="button"><span>ℹ️</span><div><strong>Βοήθεια / Offline πληροφορίες</strong><small>Τι λειτουργεί με και χωρίς σύνδεση</small></div></button>
+            <button id="menuOfflinePrepButton" class="menu-action" type="button"><span>📴</span><div><strong>Προετοιμασία Offline</strong><small>Ετοίμασε τη συσκευή πριν βγεις στο πεδίο</small></div></button>
+            <button id="menuHelpButton" class="menu-action" type="button"><span>ℹ️</span><div><strong>Πληροφορίες &amp; βοήθεια</strong><small>Χρήση εφαρμογής και βασικές οδηγίες</small></div></button>
           </div>
         </section>
       </div>
