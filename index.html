@@ -89,6 +89,20 @@
         </button>
       </nav>
 
+      <div id="operationModeModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="operationModeTitle">
+        <section class="compact-sheet-card operation-mode-card">
+          <button id="closeOperationMode" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>
+          <div class="sheet-section-heading">
+            <span>🚒</span>
+            <div><h2 id="operationModeTitle">Σύνδεση στο συμβάν</h2><p>Επίλεξε τον τρόπο συμμετοχής της μονάδας.</p></div>
+          </div>
+          <div class="menu-action-list">
+            <button id="selectOperationalCrew" class="menu-action" type="button"><span>🚒</span><div><strong>Επιχειρησιακό όχημα / πλήρωμα</strong><small>Δήλωση οχήματος και πληρώματος</small></div></button>
+            <button id="selectSupportVehicle" class="menu-action" type="button"><span>◆</span><div><strong>Όχημα Υποστήριξης</strong><small>Αίτημα προσωρινής πρόσβασης στο Κέντρο</small></div></button>
+          </div>
+        </section>
+      </div>
+
       <div id="appMenuModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="appMenuTitle">
         <section class="compact-sheet-card menu-sheet-card">
           <button id="closeAppMenu" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>

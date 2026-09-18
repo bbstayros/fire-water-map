@@ -3,6 +3,7 @@
 
   const $ = id => document.getElementById(id);
   const appMenu = $("appMenuModal");
+  const operationModeModal = $("operationModeModal");
   const helpModal = $("helpOfflineModal");
   const operationToggle = $("operationToggleButton");
   const originalCrewButton = $("openCrewButton");
@@ -12,7 +13,7 @@
   const notificationToggle = $("notificationToggleButton");
   const mobileMessagesButton = $("mobileMessagesButton");
 
-  const modals = [appMenu, helpModal].filter(Boolean);
+  const modals = [appMenu, operationModeModal, helpModal].filter(Boolean);
 
   function openModal(modal) {
     if (!modal) return;
@@ -59,20 +60,39 @@
     if (event.target === helpModal) closeModal(helpModal);
   });
 
-  // One simple vehicle button:
-  // OFF -> opens declaration form
-  // ON  -> opens the active crew panel, where sharing can be stopped.
+  // Vehicle control:
+  // LIVE -> opens the active crew/support status.
+  // OFF  -> asks whether this is an operational crew or a support vehicle.
   operationToggle?.addEventListener("click", () => {
     if (localStorage.getItem("fwm-support-access-token")) {
       $("menuSupportButton")?.click();
       return;
     }
+    if (sharingActive()) {
+      originalCrewButton?.click();
+      return;
+    }
+    openModal(operationModeModal);
+  });
+
+  $("closeOperationMode")?.addEventListener("click", () => closeModal(operationModeModal));
+  operationModeModal?.addEventListener("click", event => {
+    if (event.target === operationModeModal) closeModal(operationModeModal);
+  });
+
+  $("selectOperationalCrew")?.addEventListener("click", () => {
+    closeModal(operationModeModal);
     const mode = window.FWMAccess?.get?.()?.mode || "public";
-    if (!["crew","admin"].includes(mode)) {
+    if (!["crew", "admin"].includes(mode)) {
       $("menuCrewLoginButton")?.click();
       return;
     }
     originalCrewButton?.click();
+  });
+
+  $("selectSupportVehicle")?.addEventListener("click", () => {
+    closeModal(operationModeModal);
+    $("menuSupportButton")?.click();
   });
 
   function sharingActive() {
@@ -94,7 +114,11 @@
     operationToggle?.setAttribute("aria-pressed", String(live));
     if (label && label.textContent !== (live ? "LIVE" : "OFF")) label.textContent = live ? "LIVE" : "OFF";
     if (title) {
-      const wanted = supportActive ? `◆ ${supportName}` : (active && crewName ? `🚒 ${crewName}` : "Όχημα");
+      const supportType = localStorage.getItem("fwm-support-type") || "";
+      const supportLabel = supportType && supportName && supportName !== "Υποστήριξη"
+        ? `${supportType} · ${supportName}`
+        : (supportName || supportType || "Υποστήριξη");
+      const wanted = supportActive ? supportLabel : (active && crewName ? crewName : "Όχημα");
       const textNode = Array.from(title.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
       if (textNode && textNode.textContent.trim() !== wanted) textNode.textContent = wanted + " ";
     }
@@ -163,7 +187,10 @@
     const source = $("v37Unread");
     const badge = $("mobileMessagesBadge");
     if (!badge) return;
-    const n = Number(source?.textContent || 0);
+    const supportActive = !!localStorage.getItem("fwm-support-access-token");
+    const n = supportActive
+      ? Number(localStorage.getItem("fwm-support-unread-count") || 0)
+      : Number(source?.textContent || 0);
     if (badge.textContent !== String(n)) badge.textContent = String(n);
     badge.classList.toggle("hidden", n <= 0);
   }
@@ -213,6 +240,7 @@
   const unreadSource = $("v37Unread");
   if (unreadSource) observer.observe(unreadSource, { childList: true, subtree: true });
 
+  window.addEventListener("fwm-support-unread-changed", syncMessageBadge);
   window.addEventListener("online", updateHelpConnection);
   window.addEventListener("offline", updateHelpConnection);
   window.addEventListener("appinstalled", syncInstallMenu);
