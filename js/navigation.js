@@ -18,7 +18,19 @@
   function startCompass(){close(navModal);openModal(compassModal);compassTarget.textContent=target.name;heading=null;lastPosition=null;distanceEl.textContent="Αναμονή GPS…";bearingEl.textContent="";accuracyEl.textContent="";if(typeof DeviceOrientationEvent!=="undefined"&&typeof DeviceOrientationEvent.requestPermission==="function")permissionButton.classList.remove("hidden");else enableOrientation();if(!navigator.geolocation){toast("Η συσκευή δεν υποστηρίζει GPS.","error");return;}if(watchId!==null)navigator.geolocation.clearWatch(watchId);watchId=navigator.geolocation.watchPosition(p=>{lastPosition=p;update();},e=>toast(({1:"Δεν δόθηκε άδεια GPS.",2:"Η θέση δεν είναι διαθέσιμη.",3:"Η λήψη GPS καθυστέρησε."})[e.code]||"Σφάλμα GPS.","error"),{enableHighAccuracy:true,maximumAge:0,timeout:25000});}
   function stopCompass(){if(watchId!==null)navigator.geolocation.clearWatch(watchId);watchId=null;window.removeEventListener("deviceorientationabsolute",onOrientation,true);window.removeEventListener("deviceorientation",onOrientation,true);close(compassModal);}
   function nativeMaps(){const lat=target.latitude,lon=target.longitude,label=encodeURIComponent(target.name);const ios=/iPad|iPhone|iPod/.test(navigator.userAgent);location.href=ios?`maps://?daddr=${lat},${lon}&dirflg=d`:`geo:${lat},${lon}?q=${lat},${lon}(${label})`;}
-  function googleMaps(){location.href=`https://www.google.com/maps/dir/?api=1&destination=${target.latitude},${target.longitude}&travelmode=driving`;}
+  function googleMaps(){
+    const lat=target.latitude,lon=target.longitude;
+    const ios=/iPad|iPhone|iPod/.test(navigator.userAgent);
+    const android=/Android/i.test(navigator.userAgent);
+    // Σε Android χρησιμοποιούμε το native Google Maps navigation URI. Αυτό
+    // παραδίδει απευθείας τις συντεταγμένες στην εφαρμογή και δεν χρειάζεται
+    // πρώτα να επιλυθεί web URL — κρίσιμο όταν Wi‑Fi/data είναι κλειστά.
+    if(android){ location.href=`google.navigation:q=${lat},${lon}&mode=d`; return; }
+    // Σε iOS προτιμάμε το Google Maps app scheme. Αν δεν υπάρχει η εφαρμογή,
+    // το ξεχωριστό κουμπί "Χάρτες συσκευής" παραμένει διαθέσιμο ως fallback.
+    if(ios){ location.href=`comgooglemaps://?daddr=${lat},${lon}&directionsmode=driving`; return; }
+    location.href=`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=driving`;
+  }
   function centerMap(){const p=lastPosition?{lat:lastPosition.coords.latitude,lng:lastPosition.coords.longitude}:getUser?.();if(mapRef&&p){if(line)mapRef.removeLayer(line);if(targetMarker)mapRef.removeLayer(targetMarker);line=L.polyline([[p.lat,p.lng],[target.latitude,target.longitude]],{weight:5,dashArray:"9 8"}).addTo(mapRef);targetMarker=L.circleMarker([target.latitude,target.longitude],{radius:9,weight:3,fillOpacity:1}).addTo(mapRef);mapRef.fitBounds(line.getBounds(),{padding:[50,50],maxZoom:16});stopCompass();}}
   document.getElementById("closeNavigationModal").onclick=()=>close(navModal);document.getElementById("closeCompassModal").onclick=stopCompass;document.getElementById("startOfflineCompass").onclick=startCompass;document.getElementById("openNativeMaps").onclick=nativeMaps;document.getElementById("openGoogleMaps").onclick=googleMaps;document.getElementById("enableCompassPermission").onclick=enableOrientation;document.getElementById("centerNavigationMap").onclick=centerMap;
   window.FireWaterNavigation={open(opts){target=opts;mapRef=opts.map;getUser=opts.user;toast=opts.toast||toast;targetText.textContent=opts.name;openModal(navModal);}};

@@ -7,9 +7,13 @@
   let capturedAt = null;
 
   function showModal() {
-    const access = window.FWMAccess?.get?.() || { mode: "public" };
+    // Ο κωδικός επαλήθευσης παραμένει ορατός για όλους τους τρόπους πρόσβασης.
+    // Έτσι όλες οι καταχωρήσεις περνούν από την ίδια ελεγχόμενη ουρά έγκρισης.
     const code = document.getElementById("submissionCode");
-    if (code) { code.required = access.mode === "public"; code.closest("label")?.classList.toggle("hidden", access.mode !== "public"); }
+    if (code) {
+      code.required = true;
+      code.closest("label")?.classList.remove("hidden");
+    }
     modal.classList.remove("hidden");
     document.body.classList.add("modal-open");
   }
@@ -55,13 +59,9 @@
 
   async function sendPayload(payload) {
     if (!window.DataService.client) throw new Error("OFFLINE");
-    const access = window.FWMAccess?.get?.() || { mode: "public" };
-    if (["crew","admin"].includes(access.mode)) {
-      return window.DataService.submitOperationalPoint({
-        name: payload.p_name, category: payload.p_category, condition: payload.p_condition, notes: payload.p_notes,
-        latitude: payload.p_latitude, longitude: payload.p_longitude, accuracy_m: payload.p_accuracy_m, captured_at: payload.p_captured_at
-      });
-    }
+    // Χρησιμοποιούμε την ίδια δοκιμασμένη RPC με κωδικό επαλήθευσης για
+    // δημόσια πρόσβαση, πλήρωμα και Κέντρο. Η υποβολή συνεχίζει να πηγαίνει
+    // στις Εκκρεμείς Καταχωρήσεις και δεν δημοσιεύεται αυτόματα.
     const { error } = await window.DataService.client.rpc("submit_public_water_point", payload);
     if (error) throw error;
   }
