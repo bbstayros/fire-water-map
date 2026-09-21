@@ -52,7 +52,7 @@ window.WaterPoints = (() => {
     const properties = feature.properties || {};
     const [longitude, latitude] = feature.geometry.coordinates;
     const navigationUrl =
-      `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+      `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}&travelmode=driving`;
 
     return `
       <div class="popup-content">
@@ -66,7 +66,7 @@ window.WaterPoints = (() => {
         </p>
         <a class="navigation-link"
            href="${navigationUrl}"
-           target="_blank"
+           onclick="return WaterPoints.navigate(${latitude}, ${longitude}, event)"
            rel="noopener noreferrer">
           🧭 Πλοήγηση
         </a>
@@ -74,8 +74,29 @@ window.WaterPoints = (() => {
     `;
   }
 
+  function navigate(latitude, longitude, event) {
+    const lat = Number(latitude);
+    const lon = Number(longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return true;
+
+    // Online: keep the normal Google Maps web hand-off.
+    if (navigator.onLine) return true;
+
+    // Offline: bypass the web URL and hand raw coordinates directly to the maps app.
+    if (event) event.preventDefault();
+    const ua = navigator.userAgent || "";
+    const ios = /iPad|iPhone|iPod/.test(ua);
+    if (ios) {
+      window.location.href = `comgooglemaps://?daddr=${lat},${lon}&directionsmode=driving`;
+    } else {
+      window.location.href = `google.navigation:q=${lat},${lon}&mode=d`;
+    }
+    return false;
+  }
+
   return {
     createIcon,
-    popupHtml
+    popupHtml,
+    navigate
   };
 })();
