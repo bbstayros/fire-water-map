@@ -19,7 +19,26 @@
   function selectedCategories(){return [...document.querySelectorAll(".dock-filter input:checked")].map(x=>x.value);}
   function visiblePoints(){const q=document.getElementById("searchInput").value.trim().toLocaleLowerCase("el"),cats=selectedCategories();return state.points.filter(p=>cats.includes(p.category)).filter(p=>!q||`${p.name} ${p.notes}`.toLocaleLowerCase("el").includes(q)).filter(p=>!state.operation||p.condition==="available");}
   function render(){state.markers.forEach(m=>map.removeLayer(m));state.markers=[];for(const p of visiblePoints()){const marker=L.marker([p.latitude,p.longitude],{icon:markerIcon(p.category,p.condition),title:p.name}).addTo(map).on("click",()=>openSheet(p));state.markers.push(marker);}document.getElementById("mapCounter").textContent=`${state.markers.length} ${state.markers.length===1?"σημείο":"σημεία"}`;return state.markers;}
-  function openSheet(p){const dist=state.user?formatDistance(distanceKm(state.user.lat,state.user.lng,p.latitude,p.longitude)):"";const nav=`https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}`;sheetContent.innerHTML=`<div class="sheet-type"><img src="${icons[p.category]}"><span>${labels[p.category]}</span></div><h2>${esc(p.name)}</h2><span class="status-line ${p.condition}">${conditions[p.condition]}</span>${dist?`<p class="distance">📍 ${dist}</p>`:""}<p class="notes">${esc(p.notes||"Δεν υπάρχουν παρατηρήσεις.")}</p><a class="navigate-button" href="${nav}" target="_blank" rel="noopener">🧭 Πλοήγηση</a>`;sheet.classList.add("open");sheet.setAttribute("aria-hidden","false");}
+  function openNavigation(p){
+    const lat=Number(p.latitude), lon=Number(p.longitude);
+    if(!Number.isFinite(lat)||!Number.isFinite(lon)){toast("Δεν υπάρχουν έγκυρες συντεταγμένες για το σημείο.","error");return;}
+    const online=navigator.onLine;
+    const ua=navigator.userAgent||"";
+    const ios=/iPad|iPhone|iPod/.test(ua);
+    if(online){
+      location.href=`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=driving`;
+      return;
+    }
+    // Offline: παραδίδουμε μόνο το σημείο στο εγκατεστημένο app χαρτών.
+    // Το routing γίνεται μετά από το ίδιο το Google Maps πάνω στον κατεβασμένο offline χάρτη.
+    if(ios){
+      location.href=`comgooglemaps://?q=${lat},${lon}&center=${lat},${lon}`;
+      setTimeout(()=>{ if(document.visibilityState==="visible") location.href=`maps://?q=${lat},${lon}`; },900);
+    }else{
+      location.href=`geo:${lat},${lon}?q=${lat},${lon}`;
+    }
+  }
+  function openSheet(p){const dist=state.user?formatDistance(distanceKm(state.user.lat,state.user.lng,p.latitude,p.longitude)):"";sheetContent.innerHTML=`<div class="sheet-type"><img src="${icons[p.category]}"><span>${labels[p.category]}</span></div><h2>${esc(p.name)}</h2><span class="status-line ${p.condition}">${conditions[p.condition]}</span>${dist?`<p class="distance">📍 ${dist}</p>`:""}<p class="notes">${esc(p.notes||"Δεν υπάρχουν παρατηρήσεις.")}</p><button class="navigate-button" type="button" id="pointNavigateButton">🧭 Πλοήγηση</button>`;const navButton=document.getElementById("pointNavigateButton");if(navButton)navButton.onclick=()=>openNavigation(p);sheet.classList.add("open");sheet.setAttribute("aria-hidden","false");}
   function closeSheet(){sheet.classList.remove("open");sheet.setAttribute("aria-hidden","true");}
   function fitMarkers(markers){if(markers.length)map.fitBounds(L.featureGroup(markers).getBounds(),{padding:[45,45],maxZoom:15});}
   function drawUser(pos){state.user={lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy};if(state.userMarker)map.removeLayer(state.userMarker);if(state.accuracyCircle)map.removeLayer(state.accuracyCircle);state.userMarker=L.circleMarker([state.user.lat,state.user.lng],{radius:10,weight:4,color:"#fff",fillColor:"#1565c0",fillOpacity:1}).addTo(map).bindTooltip(`Η θέση μου · GPS ±${Math.round(state.user.accuracy||0)} m`);state.accuracyCircle=L.circle([state.user.lat,state.user.lng],{radius:state.user.accuracy,weight:1,fillOpacity:.08,interactive:false}).addTo(map);if(state.centerOnNextFix||(state.operation&&state.follow)){map.setView([state.user.lat,state.user.lng],Math.max(map.getZoom(),16));state.centerOnNextFix=false;}}
