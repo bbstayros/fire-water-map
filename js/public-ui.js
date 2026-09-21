@@ -202,8 +202,7 @@
 
   $("menuOfflinePrepButton")?.addEventListener("click", () => {
     closeModal(appMenu);
-    updateHelpConnection();
-    openModal(helpModal);
+    window.dispatchEvent(new CustomEvent("fwm:open-offline-setup"));
   });
 
   const observer = new MutationObserver(() => {

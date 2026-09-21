@@ -136,6 +136,34 @@
         </section>
       </div>
 
+
+      <div id="offlineSetupModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="offlineSetupTitle">
+        <section class="compact-sheet-card offline-setup-card">
+          <button id="closeOfflineSetup" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>
+          <div class="sheet-section-heading">
+            <span>📴</span>
+            <div><h2 id="offlineSetupTitle">Προετοιμασία Offline</h2><p>Ετοίμασε τη συσκευή πριν βγεις στο πεδίο.</p></div>
+          </div>
+          <div class="offline-steps">
+            <article class="offline-step">
+              <div class="offline-step-number">1</div><div><strong>Έλεγχος συσκευής</strong><div id="offlineDeviceSummary" class="offline-device-summary"></div></div>
+            </article>
+            <article class="offline-step">
+              <div class="offline-step-number">2</div><div><strong>Offline πλοήγηση Google Maps</strong><p>Κατέβασε από πριν την περιοχή της Κορινθίας στο Google Maps.</p><div id="offlineInstructions" class="offline-instructions"></div><button id="openMapsForSetup" class="action-button primary full" type="button">🗺️ Άνοιγμα Google Maps</button><label class="offline-confirm"><input id="offlineMapConfirmed" type="checkbox"> <span>Έχω κατεβάσει την Κορινθία στο Google Maps.</span></label></div>
+            </article>
+            <article class="offline-step">
+              <div class="offline-step-number">3</div><div><strong>Επιχειρησιακά δεδομένα</strong><p id="offlinePointsSummary">Έλεγχος αποθηκευμένων σημείων…</p><button id="refreshOfflineData" class="action-button full" type="button">↻ Ενημέρωση σημείων τώρα</button></div>
+            </article>
+            <article class="offline-step">
+              <div class="offline-step-number">4</div><div><strong>Δοκιμή GPS</strong><p>Το GPS της συσκευής μπορεί να λειτουργεί χωρίς δεδομένα κινητής.</p><button id="testGpsButton" class="action-button full" type="button">📍 Δοκιμή θέσης μου</button></div>
+            </article>
+          </div>
+          <div id="offlineSetupStatus" class="offline-setup-status">Ολοκλήρωσε τα παραπάνω βήματα.</div>
+          <button id="markOfflineReady" class="action-button primary full" type="button">✓ Ολοκλήρωση προετοιμασίας</button>
+          <p class="offline-note">Σημείωση: το Fire Water Map αποθηκεύει τα τελευταία συγχρονισμένα σημεία νερού. Η offline οδική πλοήγηση γίνεται από το Google Maps. Live πληρώματα και μηνύματα απαιτούν σύνδεση.</p>
+        </section>
+      </div>
+
       <div id="helpOfflineModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="helpOfflineTitle">
         <section class="compact-sheet-card help-sheet-card">
           <button id="closeHelpOffline" class="modal-close" type="button" aria-label="Κλείσιμο">×</button>
@@ -342,6 +370,7 @@
   <script src="js/public-submission.js"></script>
   <script src="js/live-crews.js"></script>
   <script src="js/public-ui.js"></script>
+  <script src="js/offline-setup.js"></script>
   <script src="js/pwa.js"></script>
 </body>
 </html>
