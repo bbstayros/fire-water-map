@@ -133,18 +133,18 @@
 
   function syncInstallMenu() {
     const menuButton = $("menuInstallButton");
-    if (!menuButton || !originalInstallButton) return;
+    if (!menuButton) return;
 
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       navigator.standalone === true;
     const mobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent || "");
-    const shouldShow =
-      mobile &&
-      !standalone &&
-      !originalInstallButton.classList.contains("hidden");
 
-    menuButton.classList.toggle("hidden", !shouldShow);
+    // Keep the install entry available on phones/tablets whenever the site is
+    // opened in the browser. pwa.js decides whether a native install prompt is
+    // available; otherwise it shows the platform-specific installation help.
+    // Do not couple this menu entry to the hidden legacy install hook.
+    menuButton.classList.toggle("hidden", !mobile || standalone);
   }
 
   function updateHelpConnection() {
